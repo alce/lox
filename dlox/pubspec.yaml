@@ -1,4 +1,4 @@
-name: lox
+name: dlox
 description: Lox interprteter
 version: 0.0.1
 publish_to: none
