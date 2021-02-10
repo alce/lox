@@ -49,13 +49,13 @@ enum TokenType {
 }
 
 class Token {
-  final TokenType _type;
-  final String _lexeme;
-  final Object? _literal;
-  final int _line;
+  final TokenType type;
+  final String lexeme;
+  final Object? literal;
+  final int line;
 
-  Token(this._type, this._lexeme, this._literal, this._line);
+  Token(this.type, this.lexeme, this.literal, this.line);
 
   @override
-  String toString() => '${_type} ${_lexeme} ${_literal ?? ''}';
+  String toString() => '${type} ${lexeme} ${literal ?? ''}';
 }
