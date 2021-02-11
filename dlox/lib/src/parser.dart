@@ -13,6 +13,7 @@ class Parser {
   bool get _isAtEnd => _peek().type == TokenType.EOF;
 
   Expression? parse() {
+    _log('tokens: ${_tokens.map((t) => t.display()).toList()}');
     try {
       return _expression();
     } on _ParseError catch (_) {
@@ -21,7 +22,11 @@ class Parser {
   }
 
   // expression → equality ;
-  Expression _expression() => _equality();
+  Expression _expression() {
+    final expr = _equality();
+    _log('expression: ${expr}');
+    return expr;
+  }
 
   // equality → comparison ( ( "!=" | "==" ) comparison )* ;
   Expression _equality() {
@@ -33,6 +38,7 @@ class Parser {
       expr = BinaryExpression(expr, operator, right);
     }
 
+    print('equality: ${expr}');
     return expr;
   }
 
@@ -53,6 +59,7 @@ class Parser {
       expr = BinaryExpression(expr, operator, right);
     }
 
+    _log('comparison: $expr');
     return expr;
   }
 
@@ -66,6 +73,7 @@ class Parser {
       expr = BinaryExpression(expr, operator, right);
     }
 
+    _log('term: ${expr}');
     return expr;
   }
 
@@ -79,6 +87,7 @@ class Parser {
       expr = BinaryExpression(expr, operator, right);
     }
 
+    _log('factor: ${expr}');
     return expr;
   }
 
@@ -87,25 +96,43 @@ class Parser {
     if (_match([TokenType.BANG, TokenType.MINUS])) {
       final operator = _previous();
       final right = _unary();
-      return UnaryExpression(operator, right);
+      final exp = UnaryExpression(operator, right);
+      _log('unary: ${exp}');
+      return exp;
     }
 
-    return _primary();
+    final exp = _primary();
+    _log('unary: ${exp}');
+    return exp;
   }
 
   // primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
   Expression _primary() {
-    if (_match([TokenType.FALSE])) return LiteralExpression(false);
-    if (_match([TokenType.TRUE])) return LiteralExpression(true);
-    if (_match([TokenType.NIL])) return LiteralExpression(null);
+    if (_match([TokenType.FALSE])) {
+      _log('primary: ${LiteralExpression(false)}');
+      return LiteralExpression(false);
+    }
+
+    if (_match([TokenType.TRUE])) {
+      _log('primary: ${LiteralExpression(false)}');
+      return LiteralExpression(true);
+    }
+
+    if (_match([TokenType.NIL])) {
+      _log('primary: ${LiteralExpression(null)}');
+      return LiteralExpression(null);
+    }
 
     if (_match([TokenType.NUMBER, TokenType.STRING])) {
-      return LiteralExpression(_previous().literal);
+      final exp = LiteralExpression(_previous().literal);
+      _log('primary: ${exp}');
+      return exp;
     }
 
     if (_match([TokenType.LEFT_PAREN])) {
       final expr = _expression();
       _consume(TokenType.RIGHT_PAREN, 'Expect ) after expression');
+      _log('primary: ${GroupingExpression(expr)}');
       return GroupingExpression(expr);
     }
 
@@ -171,4 +198,6 @@ class Parser {
       }
     }
   }
+
+  void _log(String message) => print(message);
 }

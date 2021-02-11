@@ -2,13 +2,23 @@ import 'dart:io';
 
 import 'package:dlox/lox.dart' as lox;
 
+class LoxException implements Exception {}
+
 void main(List<String> args) {
   if (args.length > 1) {
     print('Usage: lox [script]');
     exit(64);
   } else if (args.length == 1) {
-    final source = File(args.first).readAsStringSync();
-    lox.run(source);
+    try {
+      final source = File(args.first).readAsStringSync();
+      lox.run(source);
+    } on LoxException catch (e) {
+      print(e);
+    } on FileSystemException catch (e) {
+      print('Cannot read "${args.first}". ${e.osError?.message}');
+    } catch (e) {
+      print('Unhandled error. Call someone.');
+    }
   } else {
     repl();
   }

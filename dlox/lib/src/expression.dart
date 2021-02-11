@@ -16,6 +16,9 @@ class BinaryExpression implements Expression {
   T accept<T>(Visitor<T> visitor) {
     return visitor.visitBinaryExpression(this);
   }
+
+  @override
+  String toString() => 'BIN(${left} ${operator.lexeme} ${right})';
 }
 
 class GroupingExpression implements Expression {
@@ -38,6 +41,9 @@ class LiteralExpression implements Expression {
   T accept<T>(Visitor<T> visitor) {
     return visitor.visitLiteralExpression(this);
   }
+
+  @override
+  String toString() => 'LIT(${value})';
 }
 
 class UnaryExpression implements Expression {
@@ -50,4 +56,7 @@ class UnaryExpression implements Expression {
   T accept<T>(Visitor<T> visitor) {
     return visitor.visitUnaryExpression(this);
   }
+
+  @override
+  String toString() => 'UN(${operator.lexeme} ${right})';
 }
