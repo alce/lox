@@ -3,11 +3,32 @@ import 'dart:io';
 import 'package:charcode/ascii.dart';
 import 'package:dlox/src/token.dart';
 
+import 'util.dart';
+
 // TODO
 void error(int line, String message) {
   print('ERROR: [${line}] ${message}');
   exit(1);
 }
+
+const _keywords = <String, TokenType>{
+  'and': TokenType.AND,
+  'class': TokenType.CLASS,
+  'else': TokenType.ELSE,
+  'false': TokenType.FALSE,
+  'for': TokenType.FOR,
+  'fun': TokenType.FUN,
+  'if': TokenType.IF,
+  'nil': TokenType.NIL,
+  'or': TokenType.OR,
+  'print': TokenType.PRINT,
+  'return': TokenType.RETURN,
+  'super': TokenType.SUPER,
+  'this': TokenType.THIS,
+  'true': TokenType.TRUE,
+  'var': TokenType.VAR,
+  'while': TokenType.WHILE,
+};
 
 class Scanner {
   final String _source;
@@ -17,25 +38,6 @@ class Scanner {
   int _idx = 0;
   int _start = 0;
   int _line = 1;
-
-  static final _keywords = <String, TokenType>{
-    'and': TokenType.AND,
-    'class': TokenType.CLASS,
-    'else': TokenType.ELSE,
-    'false': TokenType.FALSE,
-    'for': TokenType.FOR,
-    'fun': TokenType.FUN,
-    'if': TokenType.IF,
-    'nil': TokenType.NIL,
-    'or': TokenType.OR,
-    'print': TokenType.PRINT,
-    'return': TokenType.RETURN,
-    'super': TokenType.SUPER,
-    'this': TokenType.THIS,
-    'true': TokenType.TRUE,
-    'var': TokenType.VAR,
-    'while': TokenType.WHILE,
-  };
 
   Scanner(this._source);
 
@@ -116,9 +118,9 @@ class Scanner {
         _string();
         break;
       default:
-        if (_isDigit(c)) {
+        if (isDigit(c)) {
           _number();
-        } else if (_isAlpha(c)) {
+        } else if (isAlpha(c)) {
           _identifier();
         } else {
           error(_line, 'Unexpected character');
@@ -145,15 +147,15 @@ class Scanner {
   }
 
   void _number() {
-    while (_isDigit(_peek())) {
+    while (isDigit(_peek())) {
       _advance();
     }
 
-    if (_peek() == $dot && _isDigit(_peekNext())) {
+    if (_peek() == $dot && isDigit(_peekNext())) {
       _advance();
     }
 
-    while (_isDigit(_peek())) {
+    while (isDigit(_peek())) {
       _advance();
     }
 
@@ -161,17 +163,14 @@ class Scanner {
   }
 
   void _identifier() {
-    while (_isAlphaNumeric(_peek())) {
+    while (isAlphaNumeric(_peek())) {
       _advance();
     }
 
     _addToken(_keywords[_source.substring(_start, _idx)] ?? TokenType.IDENT);
   }
 
-  int _advance() {
-    _idx++;
-    return _source.codeUnitAt(_idx - 1);
-  }
+  int _advance() => _source.codeUnitAt(_idx++);
 
   void _addToken(TokenType type, [Object? literal]) {
     final text = _source.substring(_start, _idx);
@@ -200,13 +199,4 @@ class Scanner {
 
     return _source.codeUnitAt(_idx + 1);
   }
-
-  bool _isDigit(int c) => c >= $0 && c <= $9;
-
-  bool _isAlpha(int c) {
-    final char = c & ~32;
-    return ($A <= char && char <= $Z) || char == $underscore;
-  }
-
-  bool _isAlphaNumeric(int c) => _isAlpha(c) || _isDigit(c);
 }
