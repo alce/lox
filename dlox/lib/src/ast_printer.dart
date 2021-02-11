@@ -7,23 +7,23 @@ class AstPrinter implements Visitor<String> {
   }
 
   @override
-  String visitBinaryExpr(BinaryExpr exp) {
-    return _parenthesize(exp.operator.lexeme, [exp.left, exp.right]);
+  String visitBinaryExpr(BinaryExpr expr) {
+    return _parenthesize(expr.operator.lexeme, [expr.left, expr.right]);
   }
 
   @override
-  String visitGroupingExpr(GroupingExpr exp) {
-    return _parenthesize('group', [exp.expression]);
+  String visitGroupingExpr(GroupingExpr expr) {
+    return _parenthesize('group', [expr.expression]);
   }
 
   @override
-  String visitLiteralExpr(LiteralExpr exp) {
-    return exp.value.toString();
+  String visitLiteralExpr(LiteralExpr expr) {
+    return expr.value.toString();
   }
 
   @override
-  String visitUnaryExpr(UnaryExpr exp) {
-    return _parenthesize(exp.operator.lexeme, [exp.right]);
+  String visitUnaryExpr(UnaryExpr expr) {
+    return _parenthesize(expr.operator.lexeme, [expr.right]);
   }
 
   String _parenthesize(String name, List<Expr> expressions) {
@@ -32,9 +32,9 @@ class AstPrinter implements Visitor<String> {
     buf.write('(');
     buf.write(name);
 
-    for (final exp in expressions) {
+    for (final expr in expressions) {
       buf.write(' ');
-      buf.write(exp.accept(this));
+      buf.write(expr.accept(this));
     }
 
     buf.write(')');

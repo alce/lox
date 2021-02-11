@@ -38,7 +38,7 @@ class Parser {
       expr = BinaryExpr(expr, operator, right);
     }
 
-    print('equality: ${expr}');
+    _log('equality: ${expr}');
     return expr;
   }
 
@@ -199,5 +199,5 @@ class Parser {
     }
   }
 
-  void _log(String message) => print(message);
+  void _log(String message) => {};
 }

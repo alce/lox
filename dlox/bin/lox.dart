@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:dlox/lox.dart' as lox;
 
-class LoxException implements Exception {}
-
 void main(List<String> args) {
   if (args.length > 1) {
     print('Usage: lox [script]');
@@ -12,7 +10,7 @@ void main(List<String> args) {
     try {
       final source = File(args.first).readAsStringSync();
       lox.run(source);
-    } on LoxException catch (e) {
+    } on lox.LoxException catch (e) {
       print(e);
     } on FileSystemException catch (e) {
       print('Cannot read "${args.first}". ${e.osError?.message}');
