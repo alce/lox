@@ -1,8 +1,8 @@
 import 'expression.dart';
 
 abstract class Visitor<T> {
-  T visitBinaryExpression(BinaryExpression exp);
-  T visitGroupingExpression(GroupingExpression exp);
-  T visitLiteralExpression(LiteralExpression exp);
-  T visitUnaryExpression(UnaryExpression exp);
+  T visitBinaryExpr(BinaryExpr exp);
+  T visitGroupingExpr(GroupingExpr exp);
+  T visitLiteralExpr(LiteralExpr exp);
+  T visitUnaryExpr(UnaryExpr exp);
 }

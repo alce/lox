@@ -1,60 +1,60 @@
 import 'token.dart';
 import 'visitor.dart';
 
-abstract class Expression {
+abstract class Expr {
   T accept<T>(Visitor<T> visitor);
 }
 
-class BinaryExpression implements Expression {
-  final Expression left;
-  final Expression right;
+class BinaryExpr implements Expr {
+  final Expr left;
+  final Expr right;
   final Token operator;
 
-  BinaryExpression(this.left, this.operator, this.right);
+  BinaryExpr(this.left, this.operator, this.right);
 
   @override
   T accept<T>(Visitor<T> visitor) {
-    return visitor.visitBinaryExpression(this);
+    return visitor.visitBinaryExpr(this);
   }
 
   @override
   String toString() => 'BIN(${left} ${operator.lexeme} ${right})';
 }
 
-class GroupingExpression implements Expression {
-  final Expression expression;
+class GroupingExpr implements Expr {
+  final Expr expression;
 
-  GroupingExpression(this.expression);
+  GroupingExpr(this.expression);
 
   @override
   T accept<T>(Visitor<T> visitor) {
-    return visitor.visitGroupingExpression(this);
+    return visitor.visitGroupingExpr(this);
   }
 }
 
-class LiteralExpression implements Expression {
+class LiteralExpr implements Expr {
   final Object? value;
 
-  LiteralExpression(this.value);
+  LiteralExpr(this.value);
 
   @override
   T accept<T>(Visitor<T> visitor) {
-    return visitor.visitLiteralExpression(this);
+    return visitor.visitLiteralExpr(this);
   }
 
   @override
   String toString() => 'LIT(${value})';
 }
 
-class UnaryExpression implements Expression {
-  final Expression right;
+class UnaryExpr implements Expr {
+  final Expr right;
   final Token operator;
 
-  UnaryExpression(this.operator, this.right);
+  UnaryExpr(this.operator, this.right);
 
   @override
   T accept<T>(Visitor<T> visitor) {
-    return visitor.visitUnaryExpression(this);
+    return visitor.visitUnaryExpr(this);
   }
 
   @override

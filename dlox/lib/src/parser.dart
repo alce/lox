@@ -12,7 +12,7 @@ class Parser {
 
   bool get _isAtEnd => _peek().type == TokenType.EOF;
 
-  Expression? parse() {
+  Expr? parse() {
     _log('tokens: ${_tokens.map((t) => t.display()).toList()}');
     try {
       return _expression();
@@ -22,20 +22,20 @@ class Parser {
   }
 
   // expression → equality ;
-  Expression _expression() {
+  Expr _expression() {
     final expr = _equality();
     _log('expression: ${expr}');
     return expr;
   }
 
   // equality → comparison ( ( "!=" | "==" ) comparison )* ;
-  Expression _equality() {
+  Expr _equality() {
     var expr = _comparison();
 
     while (_match([TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL])) {
       final operator = _previous();
       final right = _comparison();
-      expr = BinaryExpression(expr, operator, right);
+      expr = BinaryExpr(expr, operator, right);
     }
 
     print('equality: ${expr}');
@@ -43,7 +43,7 @@ class Parser {
   }
 
   // comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-  Expression _comparison() {
+  Expr _comparison() {
     var expr = _term();
 
     final candidates = [
@@ -56,7 +56,7 @@ class Parser {
     while (_match(candidates)) {
       final operator = _previous();
       final right = _term();
-      expr = BinaryExpression(expr, operator, right);
+      expr = BinaryExpr(expr, operator, right);
     }
 
     _log('comparison: $expr');
@@ -64,13 +64,13 @@ class Parser {
   }
 
   // term → factor ( ( "-" | "+" ) factor )* ;
-  Expression _term() {
+  Expr _term() {
     var expr = _factor();
 
     while (_match([TokenType.MINUS, TokenType.PLUS])) {
       final operator = _previous();
       final right = _factor();
-      expr = BinaryExpression(expr, operator, right);
+      expr = BinaryExpr(expr, operator, right);
     }
 
     _log('term: ${expr}');
@@ -78,13 +78,13 @@ class Parser {
   }
 
   // factor → unary ( ( "/" | "*" ) unary )* ;
-  Expression _factor() {
+  Expr _factor() {
     var expr = _unary();
 
     while (_match([TokenType.SLASH, TokenType.STAR])) {
       final operator = _previous();
       final right = _unary();
-      expr = BinaryExpression(expr, operator, right);
+      expr = BinaryExpr(expr, operator, right);
     }
 
     _log('factor: ${expr}');
@@ -92,11 +92,11 @@ class Parser {
   }
 
   // unary → ( "!" | "-" ) unary | primary ;
-  Expression _unary() {
+  Expr _unary() {
     if (_match([TokenType.BANG, TokenType.MINUS])) {
       final operator = _previous();
       final right = _unary();
-      final exp = UnaryExpression(operator, right);
+      final exp = UnaryExpr(operator, right);
       _log('unary: ${exp}');
       return exp;
     }
@@ -107,24 +107,24 @@ class Parser {
   }
 
   // primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
-  Expression _primary() {
+  Expr _primary() {
     if (_match([TokenType.FALSE])) {
-      _log('primary: ${LiteralExpression(false)}');
-      return LiteralExpression(false);
+      _log('primary: ${LiteralExpr(false)}');
+      return LiteralExpr(false);
     }
 
     if (_match([TokenType.TRUE])) {
-      _log('primary: ${LiteralExpression(false)}');
-      return LiteralExpression(true);
+      _log('primary: ${LiteralExpr(false)}');
+      return LiteralExpr(true);
     }
 
     if (_match([TokenType.NIL])) {
-      _log('primary: ${LiteralExpression(null)}');
-      return LiteralExpression(null);
+      _log('primary: ${LiteralExpr(null)}');
+      return LiteralExpr(null);
     }
 
     if (_match([TokenType.NUMBER, TokenType.STRING])) {
-      final exp = LiteralExpression(_previous().literal);
+      final exp = LiteralExpr(_previous().literal);
       _log('primary: ${exp}');
       return exp;
     }
@@ -132,8 +132,8 @@ class Parser {
     if (_match([TokenType.LEFT_PAREN])) {
       final expr = _expression();
       _consume(TokenType.RIGHT_PAREN, 'Expect ) after expression');
-      _log('primary: ${GroupingExpression(expr)}');
-      return GroupingExpression(expr);
+      _log('primary: ${GroupingExpr(expr)}');
+      return GroupingExpr(expr);
     }
 
     throw _error(_peek(), 'Expect expression');
