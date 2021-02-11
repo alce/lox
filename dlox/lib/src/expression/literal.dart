@@ -2,7 +2,7 @@ import '../visitor.dart';
 import 'base.dart';
 
 class LiteralExpression implements Expression {
-  final Object? value;
+  final Object value;
 
   LiteralExpression(this.value);
 

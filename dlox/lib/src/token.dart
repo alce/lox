@@ -58,4 +58,14 @@ class Token {
 
   @override
   String toString() => '${type} ${lexeme} ${literal ?? ''}';
+
+  String display() {
+    var token = type.toString().split('.').last;
+
+    if (literal != null) {
+      token = '${token}(${literal})';
+    }
+
+    return token;
+  }
 }
