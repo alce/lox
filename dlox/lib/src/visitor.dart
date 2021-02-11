@@ -1,4 +1,4 @@
-import 'expression/expression.dart';
+import 'expression.dart';
 
 abstract class Visitor<T> {
   T visitBinaryExpression(BinaryExpression exp);

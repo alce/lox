@@ -42,7 +42,6 @@ class Scanner {
   bool get _isAtEnd => _idx >= _source.length;
 
   List<Token> scan() {
-    print('scan');
     while (!_isAtEnd) {
       _start = _idx;
       _scanToken();
@@ -166,8 +165,7 @@ class Scanner {
       _advance();
     }
 
-    final text = _source.substring(_start, _idx);
-    _addToken(_keywords[text] ?? TokenType.IDENTIFIER);
+    _addToken(_keywords[_source.substring(_start, _idx)] ?? TokenType.IDENT);
   }
 
   int _advance() {
@@ -203,16 +201,12 @@ class Scanner {
     return _source.codeUnitAt(_idx + 1);
   }
 
-  bool _isDigit(int c) {
-    return c >= $0 && c <= $9;
-  }
+  bool _isDigit(int c) => c >= $0 && c <= $9;
 
   bool _isAlpha(int c) {
     final char = c & ~32;
     return ($A <= char && char <= $Z) || char == $underscore;
   }
 
-  bool _isAlphaNumeric(int c) {
-    return _isAlpha(c) || _isDigit(c);
-  }
+  bool _isAlphaNumeric(int c) => _isAlpha(c) || _isDigit(c);
 }

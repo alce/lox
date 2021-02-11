@@ -23,7 +23,7 @@ enum TokenType {
   LESS_EQUAL,
 
   // Literals
-  IDENTIFIER,
+  IDENT,
   STRING,
   NUMBER,
 

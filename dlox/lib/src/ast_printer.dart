@@ -1,4 +1,4 @@
-import 'expression/expression.dart';
+import 'expression.dart';
 import 'visitor.dart';
 
 class AstPrinter implements Visitor<String> {
