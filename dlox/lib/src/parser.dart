@@ -1,4 +1,5 @@
 import 'expression.dart';
+import 'statement.dart';
 import 'token.dart';
 
 class _ParseError implements Exception {}
@@ -12,13 +13,39 @@ class Parser {
 
   bool get _isAtEnd => _peek().type == TokenType.EOF;
 
-  Expr? parse() {
+  List<Stmt> parse() {
     _log('tokens: ${_tokens.map((t) => t.display()).toList()}');
-    try {
-      return _expression();
-    } on _ParseError catch (_) {
-      return null;
+
+    final statements = <Stmt>[];
+
+    while (!_isAtEnd) {
+      statements.add(_statement());
     }
+
+    return statements;
+  }
+
+  // statement → exprStmt | printStmt ;
+  Stmt _statement() {
+    if (_match([TokenType.PRINT])) {
+      return _printStatement();
+    }
+
+    return _expressionStatement();
+  }
+
+  // printStmt → "print" expression ";" ;
+  Stmt _printStatement() {
+    final value = _expression();
+    _consume(TokenType.SEMICOLON, "Expect ';' after value.");
+    return PrintStmt(value);
+  }
+
+  // exprStmt → expression ";" ;
+  Stmt _expressionStatement() {
+    final expr = _expression();
+    _consume(TokenType.SEMICOLON, "Expect ';' after value.");
+    return ExpressionStmt(expr);
   }
 
   // expression → equality ;

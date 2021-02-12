@@ -1,10 +1,8 @@
 import 'expression.dart';
 import 'visitor.dart';
 
-class AstPrinter implements Visitor<String> {
-  String print(Expr expr) {
-    return expr.accept(this);
-  }
+class AstPrinter implements ExprVisitor<String> {
+  String print(Expr expr) => expr.accept(this);
 
   @override
   String visitBinaryExpr(BinaryExpr expr) {

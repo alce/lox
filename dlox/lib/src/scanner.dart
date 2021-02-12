@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:charcode/ascii.dart';
-import 'package:dlox/src/token.dart';
 
+import 'token.dart';
 import 'util.dart';
 
 // TODO

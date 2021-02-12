@@ -2,7 +2,7 @@ import 'token.dart';
 import 'visitor.dart';
 
 abstract class Expr {
-  T accept<T>(Visitor<T> visitor);
+  T accept<T>(ExprVisitor<T> visitor);
 }
 
 class BinaryExpr implements Expr {
@@ -13,7 +13,7 @@ class BinaryExpr implements Expr {
   BinaryExpr(this.left, this.operator, this.right);
 
   @override
-  T accept<T>(Visitor<T> visitor) {
+  T accept<T>(ExprVisitor<T> visitor) {
     return visitor.visitBinaryExpr(this);
   }
 
@@ -27,7 +27,7 @@ class GroupingExpr implements Expr {
   GroupingExpr(this.expression);
 
   @override
-  T accept<T>(Visitor<T> visitor) {
+  T accept<T>(ExprVisitor<T> visitor) {
     return visitor.visitGroupingExpr(this);
   }
 }
@@ -38,7 +38,7 @@ class LiteralExpr implements Expr {
   LiteralExpr(this.value);
 
   @override
-  T accept<T>(Visitor<T> visitor) {
+  T accept<T>(ExprVisitor<T> visitor) {
     return visitor.visitLiteralExpr(this);
   }
 
@@ -53,7 +53,7 @@ class UnaryExpr implements Expr {
   UnaryExpr(this.operator, this.right);
 
   @override
-  T accept<T>(Visitor<T> visitor) {
+  T accept<T>(ExprVisitor<T> visitor) {
     return visitor.visitUnaryExpr(this);
   }
 

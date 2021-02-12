@@ -1,15 +1,16 @@
-import 'package:dlox/lox.dart';
-import 'package:dlox/src/expression.dart';
-import 'package:dlox/src/token.dart';
-
+import 'exception.dart';
+import 'expression.dart';
+import 'statement.dart';
+import 'token.dart';
 import 'util.dart';
 import 'visitor.dart';
 
-class Interpreter implements Visitor<Object> {
-  void interpret(Expr expr) {
+class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
+  void interpret(List<Stmt> statements) {
     try {
-      final value = _evaluate(expr);
-      print(stringify(value));
+      for (final stmt in statements) {
+        _execute(stmt);
+      }
     } on RuntimeError catch (e) {
       // Lox.runtimeError(e)
       print(e);
@@ -93,6 +94,8 @@ class Interpreter implements Visitor<Object> {
     }
   }
 
+  void _execute(Stmt stmt) => stmt.accept(this);
+
   Object _evaluate(Expr expr) => expr.accept(this);
 
   // false and nil are falsy, everything else is truthy;
@@ -121,5 +124,16 @@ class Interpreter implements Visitor<Object> {
       return;
     }
     throw RuntimeError(operator, 'Operands must be numbers');
+  }
+
+  @override
+  void visitExpressionStmt(ExpressionStmt stmt) {
+    _evaluate(stmt.expression);
+  }
+
+  @override
+  void visitPrintStmt(PrintStmt stmt) {
+    final value = _evaluate(stmt.expression);
+    print(stringify(value));
   }
 }
