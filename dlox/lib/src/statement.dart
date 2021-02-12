@@ -1,4 +1,5 @@
 import 'expression.dart';
+import 'token.dart';
 import 'visitor.dart';
 
 abstract class Stmt {
@@ -11,9 +12,7 @@ class ExpressionStmt implements Stmt {
   ExpressionStmt(this.expression);
 
   @override
-  T accept<T>(StmtVisitor<T> visitor) {
-    return visitor.visitExpressionStmt(this);
-  }
+  T accept<T>(StmtVisitor<T> visitor) => visitor.visitExpressionStmt(this);
 }
 
 class PrintStmt implements Stmt {
@@ -22,7 +21,15 @@ class PrintStmt implements Stmt {
   PrintStmt(this.expression);
 
   @override
-  T accept<T>(StmtVisitor<T> visitor) {
-    return visitor.visitPrintStmt(this);
-  }
+  T accept<T>(StmtVisitor<T> visitor) => visitor.visitPrintStmt(this);
+}
+
+class VarStmt implements Stmt {
+  final Token name;
+  final Expr? initializer;
+
+  VarStmt(this.name, this.initializer);
+
+  @override
+  T accept<T>(StmtVisitor<T> visitor) => visitor.visitVarStmt(this);
 }

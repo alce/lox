@@ -1,3 +1,5 @@
+import 'package:dlox/src/environment.dart';
+
 import 'exception.dart';
 import 'expression.dart';
 import 'statement.dart';
@@ -6,6 +8,8 @@ import 'util.dart';
 import 'visitor.dart';
 
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
+  final _env = Environment();
+
   void interpret(List<Stmt> statements) {
     try {
       for (final stmt in statements) {
@@ -94,6 +98,20 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     }
   }
 
+  @override
+  void visitVarStmt(VarStmt stmt) {
+    var value;
+
+    if (stmt.initializer != null) {
+      value = _evaluate(stmt.initializer!);
+    }
+
+    _env.define(stmt.name.lexeme, value);
+  }
+
+  @override
+  Object visitVariableExpr(VariableExpr expr) => _env.get(expr.name);
+
   void _execute(Stmt stmt) => stmt.accept(this);
 
   Object _evaluate(Expr expr) => expr.accept(this);
@@ -127,13 +145,9 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
-  void visitExpressionStmt(ExpressionStmt stmt) {
-    _evaluate(stmt.expression);
-  }
+  void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
 
   @override
-  void visitPrintStmt(PrintStmt stmt) {
-    final value = _evaluate(stmt.expression);
-    print(stringify(value));
-  }
+  void visitPrintStmt(PrintStmt stmt) =>
+      print(stringify(_evaluate(stmt.expression)));
 }

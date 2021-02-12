@@ -17,12 +17,35 @@ class Parser {
     _log('tokens: ${_tokens.map((t) => t.display()).toList()}');
 
     final statements = <Stmt>[];
-
     while (!_isAtEnd) {
-      statements.add(_statement());
+      statements.add(_declaration());
     }
 
     return statements;
+  }
+
+  // declaration → varDecl | statement ;
+  Stmt _declaration() {
+    try {
+      if (_match([TokenType.VAR])) return _varDeclaration();
+      return _statement();
+    } on _ParseError catch (e) {
+      _synchronize();
+      // return null;
+      throw Exception('found null');
+    }
+  }
+
+  Stmt _varDeclaration() {
+    final name = _consume(TokenType.IDENT, 'Expect variable name.');
+    var initializer;
+
+    if (_match([TokenType.EQUAL])) {
+      initializer = _expression();
+    }
+
+    _consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+    return VarStmt(name, initializer);
   }
 
   // statement → exprStmt | printStmt ;
@@ -154,6 +177,10 @@ class Parser {
       final exp = LiteralExpr(_previous().literal);
       _log('primary: ${exp}');
       return exp;
+    }
+
+    if (_match([TokenType.IDENT])) {
+      return VariableExpr(_previous());
     }
 
     if (_match([TokenType.LEFT_PAREN])) {

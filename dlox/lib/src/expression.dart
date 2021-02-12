@@ -13,9 +13,7 @@ class BinaryExpr implements Expr {
   BinaryExpr(this.left, this.operator, this.right);
 
   @override
-  T accept<T>(ExprVisitor<T> visitor) {
-    return visitor.visitBinaryExpr(this);
-  }
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitBinaryExpr(this);
 
   @override
   String toString() => 'BIN(${left} ${operator.lexeme} ${right})';
@@ -27,9 +25,7 @@ class GroupingExpr implements Expr {
   GroupingExpr(this.expression);
 
   @override
-  T accept<T>(ExprVisitor<T> visitor) {
-    return visitor.visitGroupingExpr(this);
-  }
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitGroupingExpr(this);
 }
 
 class LiteralExpr implements Expr {
@@ -38,9 +34,7 @@ class LiteralExpr implements Expr {
   LiteralExpr(this.value);
 
   @override
-  T accept<T>(ExprVisitor<T> visitor) {
-    return visitor.visitLiteralExpr(this);
-  }
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitLiteralExpr(this);
 
   @override
   String toString() => 'LIT(${value})';
@@ -53,10 +47,17 @@ class UnaryExpr implements Expr {
   UnaryExpr(this.operator, this.right);
 
   @override
-  T accept<T>(ExprVisitor<T> visitor) {
-    return visitor.visitUnaryExpr(this);
-  }
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitUnaryExpr(this);
 
   @override
   String toString() => 'UN(${operator.lexeme} ${right})';
+}
+
+class VariableExpr implements Expr {
+  final Token name;
+
+  VariableExpr(this.name);
+
+  @override
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitVariableExpr(this);
 }

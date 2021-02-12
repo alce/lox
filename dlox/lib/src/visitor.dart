@@ -6,9 +6,11 @@ abstract class ExprVisitor<T> {
   T visitGroupingExpr(GroupingExpr expr);
   T visitLiteralExpr(LiteralExpr expr);
   T visitUnaryExpr(UnaryExpr expr);
+  T visitVariableExpr(VariableExpr expr);
 }
 
 abstract class StmtVisitor<T> {
   T visitExpressionStmt(ExpressionStmt stmt);
   T visitPrintStmt(PrintStmt stmt);
+  T visitVarStmt(VarStmt stmt);
 }
