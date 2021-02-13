@@ -75,12 +75,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
   @override
   Object visitLiteralExpr(LiteralExpr expr) {
-    final val = expr.value;
-    if (val == null) {
-      throw Exception('found null');
-    } else {
-      return val;
-    }
+    return expr.value;
   }
 
   @override

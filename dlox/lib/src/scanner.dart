@@ -1,6 +1,7 @@
 import 'package:charcode/ascii.dart';
 
 import 'exception.dart';
+import 'nil.dart';
 import 'token.dart';
 import 'util.dart';
 
@@ -41,7 +42,7 @@ class Scanner {
       _start = _idx;
       _scanToken();
     }
-    _tokens.add(Token(TokenType.EOF, '', null, _line));
+    _tokens.add(Token(TokenType.EOF, '', Nil(), _line));
     return _tokens;
   }
 

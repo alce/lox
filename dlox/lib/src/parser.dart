@@ -1,5 +1,6 @@
 import 'exception.dart';
 import 'expression.dart';
+import 'nil.dart';
 import 'statement.dart';
 import 'token.dart';
 
@@ -26,7 +27,7 @@ class Parser {
     try {
       if (_match([TokenType.VAR])) return _varDeclaration();
       return _statement();
-    } on ParseError catch (e) {
+    } on ParseError catch (_) {
       _synchronize();
       rethrow;
     }
@@ -156,11 +157,11 @@ class Parser {
     }
 
     if (_match([TokenType.NIL])) {
-      return LiteralExpr(null);
+      return LiteralExpr(Nil());
     }
 
     if (_match([TokenType.NUMBER, TokenType.STRING])) {
-      final exp = LiteralExpr(_previous().literal);
+      final exp = LiteralExpr(_previous().literal!);
       return exp;
     }
 

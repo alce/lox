@@ -25,7 +25,7 @@ class RuntimeError extends LoxException {
   RuntimeError(Token token, String message) : super(message, token);
 
   @override
-  String toString() => '${message}\n [line ${token!.line}]';
+  String toString() => '${message}\n[line ${token!.line}]';
 }
 
 class ParseError extends LoxException {

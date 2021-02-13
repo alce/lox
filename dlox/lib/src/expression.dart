@@ -29,7 +29,7 @@ class GroupingExpr implements Expr {
 }
 
 class LiteralExpr implements Expr {
-  final Object? value;
+  final Object value;
 
   LiteralExpr(this.value);
 
