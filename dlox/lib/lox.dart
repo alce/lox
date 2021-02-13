@@ -8,7 +8,6 @@ void run(String source) {
   final interpreter = Interpreter();
   final scanner = Scanner(source);
   final parser = Parser(scanner.scan());
-  final statements = parser.parse();
 
-  interpreter.interpret(statements);
+  interpreter.interpret(parser.parse());
 }

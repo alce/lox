@@ -14,8 +14,6 @@ void main(List<String> args) {
       print(e);
     } on FileSystemException catch (e) {
       print('Cannot read "${args.first}". ${e.osError?.message}');
-    } catch (e) {
-      print('Unhandled error. Call someone.');
     }
   } else {
     repl();
@@ -30,6 +28,10 @@ void repl() {
       break;
     }
 
-    lox.run(source);
+    try {
+      lox.run(source);
+    } catch (e) {
+      print(e);
+    }
   }
 }

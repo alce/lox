@@ -1,8 +1,14 @@
+import 'exception.dart';
 import 'expression.dart';
 import 'statement.dart';
 import 'token.dart';
 
-class _ParseError implements Exception {}
+class _ParseError implements Exception {
+  final Token token;
+  final String message;
+
+  _ParseError(this.token, this.message);
+}
 
 class Parser {
   final List<Token> _tokens;
@@ -14,8 +20,6 @@ class Parser {
   bool get _isAtEnd => _peek().type == TokenType.EOF;
 
   List<Stmt> parse() {
-    _log('tokens: ${_tokens.map((t) => t.display()).toList()}');
-
     final statements = <Stmt>[];
     while (!_isAtEnd) {
       statements.add(_declaration());
@@ -31,8 +35,7 @@ class Parser {
       return _statement();
     } on _ParseError catch (e) {
       _synchronize();
-      // return null;
-      throw Exception('found null');
+      throw SyntaxError(e.token, e.message);
     }
   }
 
@@ -67,14 +70,13 @@ class Parser {
   // exprStmt → expression ";" ;
   Stmt _expressionStatement() {
     final expr = _expression();
-    _consume(TokenType.SEMICOLON, "Expect ';' after value.");
+    _consume(TokenType.SEMICOLON, "Expect ';' after expression.");
     return ExpressionStmt(expr);
   }
 
   // expression → equality ;
   Expr _expression() {
     final expr = _equality();
-    _log('expression: ${expr}');
     return expr;
   }
 
@@ -88,7 +90,6 @@ class Parser {
       expr = BinaryExpr(expr, operator, right);
     }
 
-    _log('equality: ${expr}');
     return expr;
   }
 
@@ -109,7 +110,6 @@ class Parser {
       expr = BinaryExpr(expr, operator, right);
     }
 
-    _log('comparison: $expr');
     return expr;
   }
 
@@ -123,7 +123,6 @@ class Parser {
       expr = BinaryExpr(expr, operator, right);
     }
 
-    _log('term: ${expr}');
     return expr;
   }
 
@@ -137,7 +136,6 @@ class Parser {
       expr = BinaryExpr(expr, operator, right);
     }
 
-    _log('factor: ${expr}');
     return expr;
   }
 
@@ -147,35 +145,29 @@ class Parser {
       final operator = _previous();
       final right = _unary();
       final exp = UnaryExpr(operator, right);
-      _log('unary: ${exp}');
       return exp;
     }
 
     final exp = _primary();
-    _log('unary: ${exp}');
     return exp;
   }
 
   // primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
   Expr _primary() {
     if (_match([TokenType.FALSE])) {
-      _log('primary: ${LiteralExpr(false)}');
       return LiteralExpr(false);
     }
 
     if (_match([TokenType.TRUE])) {
-      _log('primary: ${LiteralExpr(false)}');
       return LiteralExpr(true);
     }
 
     if (_match([TokenType.NIL])) {
-      _log('primary: ${LiteralExpr(null)}');
       return LiteralExpr(null);
     }
 
     if (_match([TokenType.NUMBER, TokenType.STRING])) {
       final exp = LiteralExpr(_previous().literal);
-      _log('primary: ${exp}');
       return exp;
     }
 
@@ -186,7 +178,6 @@ class Parser {
     if (_match([TokenType.LEFT_PAREN])) {
       final expr = _expression();
       _consume(TokenType.RIGHT_PAREN, 'Expect ) after expression');
-      _log('primary: ${GroupingExpr(expr)}');
       return GroupingExpr(expr);
     }
 
@@ -228,8 +219,7 @@ class Parser {
   }
 
   _ParseError _error(Token token, String message) {
-    // Lox.error(token, message);
-    return _ParseError();
+    return _ParseError(token, message);
   }
 
   void _synchronize() {
@@ -252,6 +242,4 @@ class Parser {
       }
     }
   }
-
-  void _log(String message) => {};
 }
