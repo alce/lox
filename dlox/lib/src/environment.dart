@@ -3,19 +3,25 @@ import 'package:dlox/lox.dart';
 import 'token.dart';
 
 class Environment {
+  final Environment? _enclosing;
+
   final _values = <String, Object>{};
+
+  Environment([this._enclosing]);
 
   // implies variables can be redefined.
   void define(String name, Object value) => _values[name] = value;
 
   Object get(Token name) {
-    final ret = _values[name.lexeme];
-
-    if (ret == null) {
-      throw RuntimeError(name, 'Undefined variable ${name.lexeme}.');
+    if (_values.containsKey(name.lexeme)) {
+      return _values[name.lexeme]!;
     }
 
-    return ret;
+    if (_enclosing != null) {
+      return _enclosing!.get(name);
+    }
+
+    throw RuntimeError(name, 'Undefined variable ${name.lexeme}.');
   }
 
   // no implicit variable declaration.
@@ -25,8 +31,14 @@ class Environment {
   void assign(Token name, Object value) {
     if (_values.containsKey(name.lexeme)) {
       _values[name.lexeme] = value;
-    } else {
-      throw RuntimeError(name, 'Undefined variable ${name.lexeme}.');
+      return;
     }
+
+    if (_enclosing != null) {
+      _enclosing!.assign(name, value);
+      return;
+    }
+
+    throw RuntimeError(name, 'Undefined variable ${name.lexeme}.');
   }
 }
