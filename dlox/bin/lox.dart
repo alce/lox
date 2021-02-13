@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dlox/lox.dart' as lox;
+import 'package:dlox/src/interpreter.dart';
 
 void main(List<String> args) {
   if (args.length > 1) {
@@ -9,7 +10,8 @@ void main(List<String> args) {
   } else if (args.length == 1) {
     try {
       final source = File(args.first).readAsStringSync();
-      lox.run(source);
+      final interpreter = Interpreter();
+      lox.run(source, interpreter);
     } on lox.LoxException catch (e) {
       print(e);
     } on FileSystemException catch (e) {
@@ -21,6 +23,8 @@ void main(List<String> args) {
 }
 
 void repl() {
+  final interpreter = Interpreter();
+
   while (true) {
     stdout.write('> ');
     final source = stdin.readLineSync();
@@ -29,7 +33,7 @@ void repl() {
     }
 
     try {
-      lox.run(source);
+      lox.run(source, interpreter);
     } catch (e) {
       print(e);
     }

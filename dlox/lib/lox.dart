@@ -4,8 +4,7 @@ import 'src/scanner.dart';
 
 export 'src/exception.dart';
 
-void run(String source) {
-  final interpreter = Interpreter();
+void run(String source, Interpreter interpreter) {
   final scanner = Scanner(source);
   final parser = Parser(scanner.scan());
 
