@@ -3,13 +3,6 @@ import 'expression.dart';
 import 'statement.dart';
 import 'token.dart';
 
-class _ParseError implements Exception {
-  final Token token;
-  final String message;
-
-  _ParseError(this.token, this.message);
-}
-
 class Parser {
   final List<Token> _tokens;
 
@@ -33,9 +26,9 @@ class Parser {
     try {
       if (_match([TokenType.VAR])) return _varDeclaration();
       return _statement();
-    } on _ParseError catch (e) {
+    } on ParseError catch (e) {
       _synchronize();
-      throw SyntaxError(e.token, e.message);
+      rethrow;
     }
   }
 
@@ -218,8 +211,8 @@ class Parser {
     throw _error(_peek(), message);
   }
 
-  _ParseError _error(Token token, String message) {
-    return _ParseError(token, message);
+  ParseError _error(Token token, String message) {
+    return ParseError(token, message);
   }
 
   void _synchronize() {

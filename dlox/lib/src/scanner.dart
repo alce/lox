@@ -1,15 +1,8 @@
-import 'dart:io';
-
 import 'package:charcode/ascii.dart';
 
+import 'exception.dart';
 import 'token.dart';
 import 'util.dart';
-
-// TODO
-void error(int line, String message) {
-  print('ERROR: [${line}] ${message}');
-  exit(1);
-}
 
 const _keywords = <String, TokenType>{
   'and': TokenType.AND,
@@ -123,7 +116,7 @@ class Scanner {
         } else if (isAlpha(c)) {
           _identifier();
         } else {
-          error(_line, 'Unexpected character');
+          _error(_line, 'Unexpected character');
         }
         break;
     }
@@ -137,10 +130,7 @@ class Scanner {
       _advance();
     }
 
-    if (_isAtEnd) {
-      error(_line, 'Unterminated string.');
-      return;
-    }
+    if (_isAtEnd) _error(_line, 'Unterminated string.');
 
     _advance();
     _addToken(TokenType.STRING, _source.substring(_start + 1, _idx - 1));
@@ -198,5 +188,9 @@ class Scanner {
     }
 
     return _source.codeUnitAt(_idx + 1);
+  }
+
+  void _error(int line, String message) {
+    throw SyntaxError(line, message);
   }
 }
