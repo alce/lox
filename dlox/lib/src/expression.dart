@@ -61,3 +61,13 @@ class VariableExpr implements Expr {
   @override
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitVariableExpr(this);
 }
+
+class AssignExpr implements Expr {
+  final Token name;
+  final Expr value;
+
+  AssignExpr(this.name, this.value);
+
+  @override
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitAssignExpr(this);
+}

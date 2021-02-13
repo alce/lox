@@ -1,4 +1,6 @@
 import 'expression.dart';
+import 'statement.dart';
+import 'token.dart';
 import 'visitor.dart';
 
 class AstPrinter implements ExprVisitor<String> {
@@ -19,6 +21,14 @@ class AstPrinter implements ExprVisitor<String> {
   String visitUnaryExpr(UnaryExpr expr) =>
       _parenthesize(expr.operator.lexeme, [expr.right]);
 
+  @override
+  String visitVariableExpr(VariableExpr expr) => expr.name.lexeme;
+
+  @override
+  String visitAssignExpr(AssignExpr expr) {
+    return _parenthesize2('=', [expr.name.lexeme, expr.value]);
+  }
+
   String _parenthesize(String name, List<Expr> expressions) {
     final buf = StringBuffer();
 
@@ -35,6 +45,29 @@ class AstPrinter implements ExprVisitor<String> {
     return buf.toString();
   }
 
-  @override
-  String visitVariableExpr(VariableExpr expr) => expr.name.lexeme;
+  String _parenthesize2(String name, List<Object> parts) {
+    final buf = StringBuffer();
+
+    buf.write('(');
+    buf.write(name);
+    _transform(buf, parts);
+    buf.write(')');
+
+    return buf.toString();
+  }
+
+  void _transform(StringBuffer buf, List<Object> parts) {
+    for (final part in parts) {
+      buf.write(' ');
+      if (part is Expr) {
+        buf.write(part.accept(this));
+      } else if (part is Stmt) {
+        // buf.write(part.accept(this));
+      } else if (part is Token) {
+        buf.write(part.lexeme);
+      } else {
+        buf.write(part);
+      }
+    }
+  }
 }

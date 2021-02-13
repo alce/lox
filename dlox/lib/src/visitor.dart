@@ -7,6 +7,7 @@ abstract class ExprVisitor<T> {
   T visitLiteralExpr(LiteralExpr expr);
   T visitUnaryExpr(UnaryExpr expr);
   T visitVariableExpr(VariableExpr expr);
+  T visitAssignExpr(AssignExpr expr);
 }
 
 abstract class StmtVisitor<T> {

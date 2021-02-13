@@ -17,4 +17,16 @@ class Environment {
 
     return ret;
   }
+
+  // no implicit variable declaration.
+  // a = 3; => throws
+  // var a;
+  // a = 3 => ok
+  void assign(Token name, Object value) {
+    if (_values.containsKey(name.lexeme)) {
+      _values[name.lexeme] = value;
+    } else {
+      throw RuntimeError(name, 'Undefined variable ${name.lexeme}.');
+    }
+  }
 }

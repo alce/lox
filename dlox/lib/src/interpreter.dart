@@ -105,7 +105,21 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
+  void visitPrintStmt(PrintStmt stmt) =>
+      print(stringify(_evaluate(stmt.expression)));
+
+  @override
   Object visitVariableExpr(VariableExpr expr) => _env.get(expr.name);
+
+  @override
+  void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
+
+  @override
+  Object visitAssignExpr(AssignExpr expr) {
+    final value = _evaluate(expr.value);
+    _env.assign(expr.name, value);
+    return value;
+  }
 
   void _execute(Stmt stmt) => stmt.accept(this);
 
@@ -138,11 +152,4 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     }
     throw RuntimeError(operator, 'Operands must be numbers');
   }
-
-  @override
-  void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
-
-  @override
-  void visitPrintStmt(PrintStmt stmt) =>
-      print(stringify(_evaluate(stmt.expression)));
 }

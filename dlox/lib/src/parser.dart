@@ -70,7 +70,24 @@ class Parser {
 
   // expression → equality ;
   Expr _expression() {
+    return _assignment();
+  }
+
+  Expr _assignment() {
     final expr = _equality();
+
+    if (_match([TokenType.EQUAL])) {
+      final equals = _previous();
+      final value = _assignment();
+
+      if (expr is VariableExpr) {
+        final name = expr.name;
+        return AssignExpr(name, value);
+      }
+
+      _error(equals, 'Invalid assignment target.');
+    }
+
     return expr;
   }
 
