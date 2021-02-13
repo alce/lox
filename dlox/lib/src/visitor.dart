@@ -14,4 +14,5 @@ abstract class StmtVisitor<T> {
   T visitExpressionStmt(ExpressionStmt stmt);
   T visitPrintStmt(PrintStmt stmt);
   T visitVarStmt(VarStmt stmt);
+  T visitBlockStmt(BlockStmt stmt);
 }

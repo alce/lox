@@ -1,5 +1,4 @@
-import 'package:dlox/src/environment.dart';
-
+import 'environment.dart';
 import 'exception.dart';
 import 'expression.dart';
 import 'statement.dart';
@@ -8,7 +7,7 @@ import 'util.dart';
 import 'visitor.dart';
 
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
-  final _env = Environment();
+  var _env = Environment();
 
   void interpret(List<Stmt> statements) {
     try {
@@ -121,7 +120,24 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     return value;
   }
 
+  @override
+  void visitBlockStmt(BlockStmt stmt) =>
+      _executeBlock(stmt.statements, Environment(_env));
+
   void _execute(Stmt stmt) => stmt.accept(this);
+
+  void _executeBlock(List<Stmt> statements, Environment env) {
+    final prev = _env;
+
+    try {
+      _env = env;
+      for (final stmt in statements) {
+        _execute(stmt);
+      }
+    } finally {
+      _env = prev;
+    }
+  }
 
   Object _evaluate(Expr expr) => expr.accept(this);
 

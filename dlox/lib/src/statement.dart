@@ -33,3 +33,12 @@ class VarStmt implements Stmt {
   @override
   T accept<T>(StmtVisitor<T> visitor) => visitor.visitVarStmt(this);
 }
+
+class BlockStmt implements Stmt {
+  final List<Stmt> statements;
+
+  BlockStmt(this.statements);
+
+  @override
+  T accept<T>(StmtVisitor<T> visitor) => visitor.visitBlockStmt(this);
+}

@@ -48,11 +48,21 @@ class Parser {
 
   // statement → exprStmt | printStmt ;
   Stmt _statement() {
-    if (_match(TokenType.PRINT)) {
-      return _printStatement();
-    }
+    if (_match(TokenType.PRINT)) return _printStatement();
+    if (_match(TokenType.LEFT_BRACE)) return BlockStmt(_block());
 
     return _expressionStatement();
+  }
+
+  List<Stmt> _block() {
+    final statements = <Stmt>[];
+
+    while (!_check(TokenType.RIGHT_BRACE) && !_isAtEnd) {
+      statements.add(_declaration());
+    }
+
+    _consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+    return statements;
   }
 
   // printStmt → "print" expression ";" ;
