@@ -1,5 +1,7 @@
 BUILD_DIR := build
 TOOL_SOURCES := tool/pubspec.lock $(shell find tool -name '*.dart')
+DLOX_SOURCES := dlox/pubspec.lock $(shell find dlox -name '*.dart')
+DLOX_BIN := $(BUILD_DIR)/dlox
 TEST_BIN := $(BUILD_DIR)/lox_test
 
 default: test
@@ -7,10 +9,10 @@ default: test
 clean:
 	@rm -rf $(BUILD_DIR)
 
-test: dlox $(TEST_BIN)
+test: $(DLOX_BIN) $(TEST_BIN)
 	@build/lox_test chap08_statements -i build/dlox
 
-dlox:
+$(DLOX_BIN): $(DLOX_SOURCES)
 	@mkdir -p build
 	@echo "Compiling dlox..."
 	@dart compile exe -o build/dlox dlox/bin/lox.dart >/dev/null
@@ -20,4 +22,4 @@ $(TEST_BIN): $(TOOL_SOURCES)
 	@echo "Compiling lox_test..."
 	@dart compile exe -o build/lox_test tool/bin/test.dart >/dev/null
 
-.PHONY: dlox clean
+.PHONY: clean
