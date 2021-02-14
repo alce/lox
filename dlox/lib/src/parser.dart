@@ -272,7 +272,7 @@ class Parser {
   }
 
   ParseError _error(Token token, String message) {
-    return ParseError(token, message);
+    throw ParseError(token, message);
   }
 
   void _synchronize() {
