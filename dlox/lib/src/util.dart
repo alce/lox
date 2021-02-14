@@ -9,11 +9,7 @@ bool isAlpha(int c) {
 
 bool isAlphaNumeric(int c) => isAlpha(c) || isDigit(c);
 
-String stringify(Object? object) {
-  if (object == null) {
-    return 'nil';
-  }
-
+String stringify(Object object) {
   if (object is double) {
     var text = object.toString();
     if (text.endsWith('.0')) {
@@ -24,3 +20,18 @@ String stringify(Object? object) {
 
   return object.toString();
 }
+
+// false and nil are falsy, everything else is truthy;
+bool isTruthy(Object? value) {
+  if (value == null) {
+    return false;
+  }
+
+  if (value is bool) {
+    return value;
+  }
+
+  return true;
+}
+
+bool isEqual(Object? a, Object? b) => a == b;

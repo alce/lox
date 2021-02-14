@@ -15,10 +15,20 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
         _execute(stmt);
       }
     } on RuntimeError catch (e) {
-      // Lox.runtimeError(e)
       print(e);
     }
   }
+
+  @override
+  Object visitAssignExpr(AssignExpr expr) {
+    final value = _evaluate(expr.value);
+    _env.assign(expr.name, value);
+    return value;
+  }
+
+  @override
+  void visitBlockStmt(BlockStmt stmt) =>
+      _executeBlock(stmt.statements, Environment(_env));
 
   @override
   Object visitBinaryExpr(BinaryExpr expr) {
@@ -59,13 +69,16 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
         _checkNumberOperands(expr.operator, left, right);
         return (left as double) <= (right as double);
       case TokenType.BANG_EQUAL:
-        return !_isEqual(left, right);
+        return !isEqual(left, right);
       case TokenType.EQUAL_EQUAL:
-        return _isEqual(left, right);
+        return !isEqual(left, right);
       default:
         throw UnimplementedError();
     }
   }
+
+  @override
+  void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
 
   @override
   Object visitGroupingExpr(GroupingExpr expr) {
@@ -73,9 +86,22 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
+  void visitIfStmt(IfStmt stmt) {
+    if (isTruthy(_evaluate(stmt.condition))) {
+      _execute(stmt.thenBranch);
+    } else if (stmt.elseBranch != null) {
+      _execute(stmt.elseBranch!);
+    }
+  }
+
+  @override
   Object visitLiteralExpr(LiteralExpr expr) {
     return expr.value;
   }
+
+  @override
+  void visitPrintStmt(PrintStmt stmt) =>
+      print(stringify(_evaluate(stmt.expression)));
 
   @override
   Object visitUnaryExpr(UnaryExpr expr) {
@@ -86,11 +112,14 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
         _checkNumberOperand(expr.operator, right);
         return -(right as double);
       case TokenType.BANG:
-        return !_isTruthy(right);
+        return !isTruthy(right);
       default:
         throw Exception('Unreachable');
     }
   }
+
+  @override
+  Object visitVariableExpr(VariableExpr expr) => _env.get(expr.name);
 
   @override
   void visitVarStmt(VarStmt stmt) {
@@ -102,27 +131,6 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
     _env.define(stmt.name.lexeme, value);
   }
-
-  @override
-  void visitPrintStmt(PrintStmt stmt) =>
-      print(stringify(_evaluate(stmt.expression)));
-
-  @override
-  Object visitVariableExpr(VariableExpr expr) => _env.get(expr.name);
-
-  @override
-  void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
-
-  @override
-  Object visitAssignExpr(AssignExpr expr) {
-    final value = _evaluate(expr.value);
-    _env.assign(expr.name, value);
-    return value;
-  }
-
-  @override
-  void visitBlockStmt(BlockStmt stmt) =>
-      _executeBlock(stmt.statements, Environment(_env));
 
   void _execute(Stmt stmt) => stmt.accept(this);
 
@@ -140,21 +148,6 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   Object _evaluate(Expr expr) => expr.accept(this);
-
-  // false and nil are falsy, everything else is truthy;
-  bool _isTruthy(Object? value) {
-    if (value == null) {
-      return false;
-    }
-
-    if (value is bool) {
-      return value;
-    }
-
-    return true;
-  }
-
-  bool _isEqual(Object? a, Object? b) => a == b;
 
   void _checkNumberOperand(Token operator, Object operand) {
     if (operand is! double) {

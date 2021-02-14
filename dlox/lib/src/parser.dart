@@ -23,7 +23,6 @@ class Parser {
     return statements;
   }
 
-  // declaration → varDecl | statement ;
   Stmt _declaration() {
     try {
       if (_match(TokenType.VAR)) return _varDeclaration();
@@ -46,8 +45,8 @@ class Parser {
     return VarStmt(name, initializer);
   }
 
-  // statement → exprStmt | printStmt ;
   Stmt _statement() {
+    if (_match(TokenType.IF)) return _ifStatement();
     if (_match(TokenType.PRINT)) return _printStatement();
     if (_match(TokenType.LEFT_BRACE)) return BlockStmt(_block());
 
@@ -65,21 +64,33 @@ class Parser {
     return statements;
   }
 
-  // printStmt → "print" expression ";" ;
+  Stmt _ifStatement() {
+    _consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+    final condition = _expression();
+    _consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+    final thenBranch = _statement();
+    var elseBranch;
+
+    if (_match(TokenType.ELSE)) {
+      elseBranch = _statement();
+    }
+
+    return IfStmt(condition, thenBranch, elseBranch);
+  }
+
   Stmt _printStatement() {
     final value = _expression();
     _consume(TokenType.SEMICOLON, "Expect ';' after value.");
     return PrintStmt(value);
   }
 
-  // exprStmt → expression ";" ;
   Stmt _expressionStatement() {
     final expr = _expression();
     _consume(TokenType.SEMICOLON, "Expect ';' after expression.");
     return ExpressionStmt(expr);
   }
 
-  // expression → equality ;
   Expr _expression() => _assignment();
 
   Expr _assignment() {
@@ -100,7 +111,6 @@ class Parser {
     return expr;
   }
 
-  // equality → comparison ( ( "!=" | "==" ) comparison )* ;
   Expr _equality() {
     var expr = _comparison();
 
@@ -113,7 +123,6 @@ class Parser {
     return expr;
   }
 
-  // comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
   Expr _comparison() {
     var expr = _term();
 
@@ -133,7 +142,6 @@ class Parser {
     return expr;
   }
 
-  // term → factor ( ( "-" | "+" ) factor )* ;
   Expr _term() {
     var expr = _factor();
 
@@ -146,7 +154,6 @@ class Parser {
     return expr;
   }
 
-  // factor → unary ( ( "/" | "*" ) unary )* ;
   Expr _factor() {
     var expr = _unary();
 
@@ -159,7 +166,6 @@ class Parser {
     return expr;
   }
 
-  // unary → ( "!" | "-" ) unary | primary ;
   Expr _unary() {
     if (_matchAny([TokenType.BANG, TokenType.MINUS])) {
       final operator = _previous();
@@ -171,7 +177,6 @@ class Parser {
     return _primary();
   }
 
-  // primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
   Expr _primary() {
     if (_match(TokenType.FALSE)) return LiteralExpr(false);
     if (_match(TokenType.TRUE)) return LiteralExpr(true);
