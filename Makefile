@@ -14,12 +14,12 @@ test: $(DLOX_BIN) $(TEST_BIN)
 
 $(DLOX_BIN): $(DLOX_SOURCES)
 	@mkdir -p build
-	@echo "Compiling dlox..."
+	@echo "Compiling dart binary..."
 	@dart compile exe -o build/dlox dlox/bin/lox.dart >/dev/null
 
 $(TEST_BIN): $(TOOL_SOURCES)
 	@mkdir -p build
-	@echo "Compiling lox_test..."
+	@echo "Compiling test binary..."
 	@dart compile exe -o build/lox_test tool/bin/test.dart >/dev/null
 
 .PHONY: clean

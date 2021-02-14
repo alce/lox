@@ -44,9 +44,6 @@ class Suite {
 void main(List<String> arguments) {
   _defineTestSuites();
 
-  print(_cSuites);
-  print(_javaSuites);
-
   var parser = ArgParser();
 
   parser.addOption('interpreter', abbr: 'i', help: 'Path to interpreter.');
