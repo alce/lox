@@ -164,7 +164,7 @@ class Parser {
       TokenType.GREATER,
       TokenType.GREATER_EQUAL,
       TokenType.LESS,
-      TokenType.GREATER_EQUAL
+      TokenType.LESS_EQUAL
     ];
 
     while (_matchAny(candidates)) {
@@ -204,8 +204,7 @@ class Parser {
     if (_matchAny([TokenType.BANG, TokenType.MINUS])) {
       final operator = _previous();
       final right = _unary();
-      final exp = UnaryExpr(operator, right);
-      return exp;
+      return UnaryExpr(operator, right);
     }
 
     return _primary();

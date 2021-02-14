@@ -35,4 +35,6 @@ bool isTruthy(Object value) {
   return true;
 }
 
-bool isEqual(Object? a, Object? b) => a == b;
+bool isEqual(Object? a, Object? b) {
+  return a == b;
+}

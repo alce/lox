@@ -39,6 +39,6 @@ class Environment {
       return;
     }
 
-    throw RuntimeError(name, 'Undefined variable ${name.lexeme}.');
+    throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
   }
 }

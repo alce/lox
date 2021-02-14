@@ -51,7 +51,9 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
         }
 
         throw RuntimeError(
-            expr.operator, 'Operands must two numbers or two strings');
+          expr.operator,
+          'Operands must be two numbers or two strings.',
+        );
       case TokenType.GREATER:
         _checkNumberOperands(expr.operator, left, right);
         return (left as double) > (right as double);
@@ -67,7 +69,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
       case TokenType.BANG_EQUAL:
         return !isEqual(left, right);
       case TokenType.EQUAL_EQUAL:
-        return !isEqual(left, right);
+        return isEqual(left, right);
       default:
         throw UnimplementedError();
     }
@@ -167,7 +169,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
   void _checkNumberOperand(Token operator, Object operand) {
     if (operand is! double) {
-      throw RuntimeError(operator, 'Operand must be a number');
+      throw RuntimeError(operator, 'Operand must be a number.');
     }
   }
 

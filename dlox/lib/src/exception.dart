@@ -38,6 +38,6 @@ class ParseError extends LoxException {
   @override
   String toString() {
     final location = token!.type == TokenType.EOF ? 'end' : token!.lexeme;
-    return '[line ${token!.line}] Error at ${location}: ${message}';
+    return "[line ${token!.line}] Error at '${location}': ${message}";
   }
 }
