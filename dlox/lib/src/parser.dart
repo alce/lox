@@ -222,11 +222,11 @@ class Parser {
 
     if (_match(TokenType.LEFT_PAREN)) {
       final expr = _expression();
-      _consume(TokenType.RIGHT_PAREN, 'Expect ) after expression');
+      _consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
       return GroupingExpr(expr);
     }
 
-    throw _error(_peek(), 'Expect expression');
+    throw _error(_peek(), 'Expect expression.');
   }
 
   bool _match(TokenType type) {
