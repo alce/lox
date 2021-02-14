@@ -1,0 +1,5 @@
+/build/
+/tool/.dart_tool/
+/tool/.packages/
+
+xcuserdata/
