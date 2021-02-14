@@ -1,6 +1,7 @@
 import 'token.dart';
 
 class LoxException implements Exception {
+  final exitCode = 65;
   final String _message;
   final Token? _token;
 
@@ -22,6 +23,9 @@ class SyntaxError extends LoxException {
 }
 
 class RuntimeError extends LoxException {
+  @override
+  final exitCode = 70;
+
   RuntimeError(Token token, String message) : super(message, token);
 
   @override

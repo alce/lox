@@ -21,7 +21,7 @@ class Environment {
       return _enclosing!.get(name);
     }
 
-    throw RuntimeError(name, 'Undefined variable ${name.lexeme}.');
+    throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
   }
 
   // no implicit variable declaration.

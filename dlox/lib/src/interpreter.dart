@@ -10,12 +10,8 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   var _env = Environment();
 
   void interpret(List<Stmt> statements) {
-    try {
-      for (final stmt in statements) {
-        _execute(stmt);
-      }
-    } on RuntimeError catch (e) {
-      print(e);
+    for (final stmt in statements) {
+      _execute(stmt);
     }
   }
 
@@ -179,6 +175,6 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     if (left is double && right is double) {
       return;
     }
-    throw RuntimeError(operator, 'Operands must be numbers');
+    throw RuntimeError(operator, 'Operands must be numbers.');
   }
 }

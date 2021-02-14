@@ -44,7 +44,6 @@ class Suite {
 void main(List<String> arguments) {
   _defineTestSuites();
 
-  print(_allSuites);
   print(_cSuites);
   print(_javaSuites);
 
@@ -442,8 +441,7 @@ void _defineTestSuites() {
 
   void java(String name, Map<String, String> tests) {
     var dir = name == 'jlox' ? 'build/java' : 'build/gen/$name';
-    _allSuites[name] = Suite(name, 'java', 'java',
-        ['-cp', dir, 'com.craftinginterpreters.lox.Lox'], tests);
+    _allSuites[name] = Suite(name, 'java', 'java', [], tests);
     _javaSuites.add(name);
   }
 

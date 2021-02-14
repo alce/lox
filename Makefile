@@ -8,7 +8,7 @@ clean:
 	@rm -rf $(BUILD_DIR)
 
 test: dlox $(TEST_BIN)
-	@build/lox_test chap04_scanning -i build/dlox
+	@build/lox_test chap08_statements -i build/dlox
 
 dlox:
 	@mkdir -p build

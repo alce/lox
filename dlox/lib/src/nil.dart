@@ -1,4 +1,4 @@
 class Nil {
   @override
-  String toString() => 'nil';
+  String toString() => 'null';
 }

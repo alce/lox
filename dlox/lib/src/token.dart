@@ -59,13 +59,17 @@ class Token {
   Token(this.type, this.lexeme, this.literal, this.line);
 
   @override
-  String toString() => '${type} ${lexeme} ${literal ?? ''}';
+  String toString() {
+    var token = type.toString().split('.').last;
+
+    return '${token} ${lexeme} ${literal ?? ''}';
+  }
 
   String display() {
     var token = type.toString().split('.').last;
 
     if (_hasLiteral()) {
-      token = '${token}(${literal})';
+      token = '${token} ${literal}';
     }
 
     return token;

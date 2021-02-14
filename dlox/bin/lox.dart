@@ -13,9 +13,11 @@ void main(List<String> args) {
       final interpreter = Interpreter();
       lox.run(source, interpreter);
     } on lox.LoxException catch (e) {
-      print(e);
+      stderr.write(e);
+      exit(e.exitCode);
     } on FileSystemException catch (e) {
-      print('Cannot read "${args.first}". ${e.osError?.message}');
+      stderr.write('Cannot read "${args.first}". ${e.osError?.message}');
+      exit(1);
     }
   } else {
     repl();
