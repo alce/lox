@@ -53,17 +53,6 @@ class Parser {
     return _expressionStatement();
   }
 
-  List<Stmt> _block() {
-    final statements = <Stmt>[];
-
-    while (!_check(TokenType.RIGHT_BRACE) && !_isAtEnd) {
-      statements.add(_declaration());
-    }
-
-    _consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
-    return statements;
-  }
-
   Stmt _ifStatement() {
     _consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
     final condition = _expression();
@@ -79,10 +68,15 @@ class Parser {
     return IfStmt(condition, thenBranch, elseBranch);
   }
 
-  Stmt _printStatement() {
-    final value = _expression();
-    _consume(TokenType.SEMICOLON, "Expect ';' after value.");
-    return PrintStmt(value);
+  List<Stmt> _block() {
+    final statements = <Stmt>[];
+
+    while (!_check(TokenType.RIGHT_BRACE) && !_isAtEnd) {
+      statements.add(_declaration());
+    }
+
+    _consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+    return statements;
   }
 
   Stmt _expressionStatement() {
@@ -91,10 +85,16 @@ class Parser {
     return ExpressionStmt(expr);
   }
 
+  Stmt _printStatement() {
+    final value = _expression();
+    _consume(TokenType.SEMICOLON, "Expect ';' after value.");
+    return PrintStmt(value);
+  }
+
   Expr _expression() => _assignment();
 
   Expr _assignment() {
-    final expr = _equality();
+    final expr = _or();
 
     if (_match(TokenType.EQUAL)) {
       final equals = _previous();
@@ -106,6 +106,30 @@ class Parser {
       }
 
       _error(equals, 'Invalid assignment target.');
+    }
+
+    return expr;
+  }
+
+  Expr _or() {
+    var expr = _and();
+
+    while (_match(TokenType.OR)) {
+      final operator = _previous();
+      final right = _and();
+      expr = LogicalExpr(expr, operator, right);
+    }
+
+    return expr;
+  }
+
+  Expr _and() {
+    var expr = _equality();
+
+    while (_match(TokenType.AND)) {
+      final operator = _previous();
+      final right = _equality();
+      expr = LogicalExpr(expr, operator, right);
     }
 
     return expr;

@@ -5,6 +5,7 @@ abstract class ExprVisitor<T> {
   T visitAssignExpr(AssignExpr expr);
   T visitBinaryExpr(BinaryExpr expr);
   T visitGroupingExpr(GroupingExpr expr);
+  T visitLogicalExpr(LogicalExpr expr);
   T visitLiteralExpr(LiteralExpr expr);
   T visitUnaryExpr(UnaryExpr expr);
   T visitVariableExpr(VariableExpr expr);

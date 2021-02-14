@@ -100,6 +100,19 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
+  Object visitLogicalExpr(LogicalExpr expr) {
+    final left = _evaluate(expr.left);
+
+    if (expr.operator.type == TokenType.OR) {
+      if (isTruthy(left)) return left;
+    } else {
+      if (!isTruthy(left)) return left;
+    }
+
+    return _evaluate(expr.right);
+  }
+
+  @override
   void visitPrintStmt(PrintStmt stmt) =>
       print(stringify(_evaluate(stmt.expression)));
 

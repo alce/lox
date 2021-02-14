@@ -5,6 +5,16 @@ abstract class Expr {
   T accept<T>(ExprVisitor<T> visitor);
 }
 
+class AssignExpr implements Expr {
+  final Token name;
+  final Expr value;
+
+  AssignExpr(this.name, this.value);
+
+  @override
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitAssignExpr(this);
+}
+
 class BinaryExpr implements Expr {
   final Expr left;
   final Expr right;
@@ -40,6 +50,17 @@ class LiteralExpr implements Expr {
   String toString() => 'LIT(${value})';
 }
 
+class LogicalExpr implements Expr {
+  final Expr left;
+  final Token operator;
+  final Expr right;
+
+  LogicalExpr(this.left, this.operator, this.right);
+
+  @override
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitLogicalExpr(this);
+}
+
 class UnaryExpr implements Expr {
   final Expr right;
   final Token operator;
@@ -60,14 +81,4 @@ class VariableExpr implements Expr {
 
   @override
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitVariableExpr(this);
-}
-
-class AssignExpr implements Expr {
-  final Token name;
-  final Expr value;
-
-  AssignExpr(this.name, this.value);
-
-  @override
-  T accept<T>(ExprVisitor<T> visitor) => visitor.visitAssignExpr(this);
 }

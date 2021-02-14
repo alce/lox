@@ -7,6 +7,11 @@ class AstPrinter implements ExprVisitor<String> {
   String print(Expr expr) => expr.accept(this);
 
   @override
+  String visitAssignExpr(AssignExpr expr) {
+    return _parenthesize2('=', [expr.name.lexeme, expr.value]);
+  }
+
+  @override
   String visitBinaryExpr(BinaryExpr expr) =>
       _parenthesize(expr.operator.lexeme, [expr.left, expr.right]);
 
@@ -18,16 +23,16 @@ class AstPrinter implements ExprVisitor<String> {
   String visitLiteralExpr(LiteralExpr expr) => expr.value.toString();
 
   @override
+  String visitLogicalExpr(LogicalExpr expr) {
+    throw UnimplementedError();
+  }
+
+  @override
   String visitUnaryExpr(UnaryExpr expr) =>
       _parenthesize(expr.operator.lexeme, [expr.right]);
 
   @override
   String visitVariableExpr(VariableExpr expr) => expr.name.lexeme;
-
-  @override
-  String visitAssignExpr(AssignExpr expr) {
-    return _parenthesize2('=', [expr.name.lexeme, expr.value]);
-  }
 
   String _parenthesize(String name, List<Expr> expressions) {
     final buf = StringBuffer();

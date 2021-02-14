@@ -1,5 +1,7 @@
 import 'package:charcode/ascii.dart';
 
+import 'nil.dart';
+
 bool isDigit(int c) => c >= $0 && c <= $9;
 
 bool isAlpha(int c) {
@@ -21,12 +23,11 @@ String stringify(Object object) {
   return object.toString();
 }
 
-// false and nil are falsy, everything else is truthy;
-bool isTruthy(Object? value) {
-  if (value == null) {
+// false and Nil are falsy, everything else is truthy;
+bool isTruthy(Object value) {
+  if (value is Nil) {
     return false;
   }
-
   if (value is bool) {
     return value;
   }
