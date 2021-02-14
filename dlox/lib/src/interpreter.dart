@@ -160,6 +160,13 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     }
   }
 
+  @override
+  void visitWhileStmt(WhileStmt stmt) {
+    while (isTruthy(_evaluate(stmt.condition))) {
+      _execute(stmt.body);
+    }
+  }
+
   Object _evaluate(Expr expr) => expr.accept(this);
 
   void _checkNumberOperand(Token operator, Object operand) {

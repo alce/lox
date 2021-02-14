@@ -53,3 +53,13 @@ class VarStmt implements Stmt {
   @override
   T accept<T>(StmtVisitor<T> visitor) => visitor.visitVarStmt(this);
 }
+
+class WhileStmt implements Stmt {
+  final Expr condition;
+  final Stmt body;
+
+  WhileStmt(this.condition, this.body);
+
+  @override
+  T accept<T>(StmtVisitor<T> visitor) => visitor.visitWhileStmt(this);
+}
