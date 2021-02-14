@@ -1,6 +1,7 @@
 import 'environment.dart';
 import 'exception.dart';
 import 'expression.dart';
+import 'nil.dart';
 import 'statement.dart';
 import 'token.dart';
 import 'util.dart';
@@ -109,6 +110,9 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
     return _evaluate(expr.right);
   }
+
+  @override
+  Object visitNil(Nil expr) => expr;
 
   @override
   void visitPrintStmt(PrintStmt stmt) =>

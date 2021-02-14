@@ -35,7 +35,7 @@ class Parser {
 
   Stmt _varDeclaration() {
     final name = _consume(TokenType.IDENT, 'Expect variable name.');
-    var initializer;
+    Expr initializer = Nil();
 
     if (_match(TokenType.EQUAL)) {
       initializer = _expression();

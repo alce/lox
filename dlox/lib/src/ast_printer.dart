@@ -1,4 +1,5 @@
 import 'expression.dart';
+import 'nil.dart';
 import 'statement.dart';
 import 'token.dart';
 import 'visitor.dart';
@@ -26,6 +27,9 @@ class AstPrinter implements ExprVisitor<String> {
   String visitLogicalExpr(LogicalExpr expr) {
     throw UnimplementedError();
   }
+
+  @override
+  String visitNil(Nil expr) => 'nil';
 
   @override
   String visitUnaryExpr(UnaryExpr expr) =>

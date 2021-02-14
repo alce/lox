@@ -1,4 +1,5 @@
 import 'expression.dart';
+import 'nil.dart';
 import 'statement.dart';
 
 abstract class ExprVisitor<T> {
@@ -8,6 +9,7 @@ abstract class ExprVisitor<T> {
   T visitLogicalExpr(LogicalExpr expr);
   T visitLiteralExpr(LiteralExpr expr);
   T visitUnaryExpr(UnaryExpr expr);
+  T visitNil(Nil expr);
   T visitVariableExpr(VariableExpr expr);
 }
 
