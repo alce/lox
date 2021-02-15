@@ -3,6 +3,7 @@ import 'dart:io';
 import 'exception.dart';
 import 'interpreter.dart';
 import 'parser.dart';
+import 'resolver.dart';
 import 'scanner.dart';
 import 'token.dart';
 
@@ -44,6 +45,11 @@ class Lox {
     final scanner = Scanner(source);
     final parser = Parser(scanner.scan());
     final statements = parser.parse();
+
+    if (_hadError) return;
+
+    final resolver = Resolver(_interpreter);
+    resolver.resolve(statements);
 
     if (_hadError) return;
 

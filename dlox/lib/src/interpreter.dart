@@ -27,7 +27,7 @@ class _Clock implements LoxCallable {
 
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   final globals = Environment();
-
+  final _locals = <Expr, int>{};
   var _env;
 
   Interpreter() {
@@ -43,10 +43,19 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     }
   }
 
+  void resolve(Expr expr, int depth) => _locals[expr] = depth;
+
   @override
   Object visitAssignExpr(AssignExpr expr) {
     final value = _evaluate(expr.value);
-    _env.assign(expr.name, value);
+    final distance = _locals[expr];
+
+    if (distance != null) {
+      _env.assignAt(distance, expr.name, value);
+    } else {
+      globals.assign(expr.name, value);
+    }
+
     return value;
   }
 
@@ -192,7 +201,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
-  Object visitVariableExpr(VariableExpr expr) => _env.get(expr.name);
+  Object visitVariableExpr(VariableExpr expr) => _lookup(expr.name, expr);
 
   @override
   void visitVarStmt(VarStmt stmt) {
@@ -236,6 +245,16 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   void _checkNumberOperands(Token operator, Object left, Object right) {
     if (!(left is double && right is double)) {
       throw RuntimeError(operator, 'Operands must be numbers.');
+    }
+  }
+
+  Object _lookup(Token name, Expr expr) {
+    final distance = _locals[expr];
+
+    if (distance != null) {
+      return _env.getAt(distance, name.lexeme);
+    } else {
+      return globals.get(name);
     }
   }
 }

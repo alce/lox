@@ -21,6 +21,9 @@ class Environment {
     throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
   }
 
+  Object? getAt(int distance, String name) =>
+      _ancestor(distance)?._values[name];
+
   void assign(Token name, Object value) {
     if (_values.containsKey(name.lexeme)) {
       _values[name.lexeme] = value;
@@ -33,5 +36,16 @@ class Environment {
     }
 
     throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
+  }
+
+  void assignAt(int distance, Token name, Object value) =>
+      _ancestor(distance)?._values[name.lexeme] = value;
+
+  Environment? _ancestor(int distance) {
+    Environment? env = this;
+    for (var i = 0; i < distance; i++) {
+      env = env?._enclosing;
+    }
+    return env;
   }
 }
