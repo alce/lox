@@ -46,7 +46,7 @@ class Parser {
 
     if (!_check(TokenType.RIGHT_PAREN)) {
       do {
-        if (params.length >= 250) {
+        if (params.length >= 255) {
           _error(_peek(), "Can't have more than 255 parameters.");
         }
         params.add(_consume(TokenType.IDENT, 'Expect parameter name.'));

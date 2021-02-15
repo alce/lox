@@ -180,6 +180,8 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
       value = _evaluate(stmt.value);
     }
 
+    value ??= Nil();
+
     throw Return(value);
   }
 
