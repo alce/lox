@@ -9,6 +9,7 @@ import 'visitor.dart';
 enum _FunctionType {
   NONE,
   FUNCTION,
+  METHOD,
 }
 
 class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
@@ -47,6 +48,7 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   void visitClassStmt(ClassStmt stmt) {
     _declare(stmt.name);
     _define(stmt.name);
+    stmt.methods.forEach((m) => _resolveFunction(m, _FunctionType.METHOD));
   }
 
   @override

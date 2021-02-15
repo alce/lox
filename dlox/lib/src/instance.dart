@@ -15,6 +15,12 @@ class LoxInstance {
       return obj;
     }
 
+    final method = _klass.findMethod(name.lexeme);
+
+    if (method != null) {
+      return method;
+    }
+
     throw RuntimeError(name, "Undefined property '${name.lexeme}'.");
   }
 

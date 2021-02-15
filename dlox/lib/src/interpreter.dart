@@ -122,8 +122,16 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   @override
   void visitClassStmt(ClassStmt stmt) {
     _env.define(stmt.name.lexeme, Nil());
-    final klass = LoxClass(stmt.name.lexeme);
-    _env.assign(stmt.name, klass);
+
+    final methods = stmt.methods.fold(
+      <String, LoxFunction>{},
+      (Map<String, LoxFunction> acc, method) {
+        acc[method.name.lexeme] = LoxFunction(method, _env);
+        return acc;
+      },
+    );
+
+    _env.assign(stmt.name, LoxClass(stmt.name.lexeme, methods));
   }
 
   @override
