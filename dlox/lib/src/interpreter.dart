@@ -31,7 +31,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   var _env;
 
   Interpreter() {
-    globals.define('clock', _Clock);
+    globals.define('clock', _Clock());
     _env = globals;
   }
 
