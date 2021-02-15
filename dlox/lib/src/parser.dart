@@ -1,8 +1,10 @@
-import 'exception.dart';
 import 'expression.dart';
+import 'lox.dart';
 import 'nil.dart';
 import 'statement.dart';
 import 'token.dart';
+
+class _ParseError implements Exception {}
 
 class Parser {
   final List<Token> _tokens;
@@ -17,19 +19,21 @@ class Parser {
     final statements = <Stmt>[];
 
     while (!_isAtEnd) {
-      statements.add(_declaration());
+      final decl = _declaration();
+      if (decl != null) {
+        statements.add(decl);
+      }
     }
 
     return statements;
   }
 
-  Stmt _declaration() {
+  Stmt? _declaration() {
     try {
       if (_match(TokenType.VAR)) return _varDeclaration();
       return _statement();
-    } on ParseError catch (_) {
+    } on _ParseError catch (_) {
       _synchronize();
-      rethrow;
     }
   }
 
@@ -113,7 +117,10 @@ class Parser {
     final statements = <Stmt>[];
 
     while (!_check(TokenType.RIGHT_BRACE) && !_isAtEnd) {
-      statements.add(_declaration());
+      final decl = _declaration();
+      if (decl != null) {
+        statements.add(decl);
+      }
     }
 
     _consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
@@ -311,8 +318,9 @@ class Parser {
     throw _error(_peek(), message);
   }
 
-  ParseError _error(Token token, String message) {
-    throw ParseError(token, message);
+  _ParseError _error(Token token, String message) {
+    Lox.error(token, message);
+    throw _ParseError();
   }
 
   void _synchronize() {

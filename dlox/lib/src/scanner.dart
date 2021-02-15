@@ -1,6 +1,6 @@
 import 'package:charcode/ascii.dart';
 
-import 'exception.dart';
+import 'lox.dart';
 import 'nil.dart';
 import 'token.dart';
 import 'util.dart';
@@ -117,7 +117,7 @@ class Scanner {
         } else if (isAlpha(c)) {
           _identifier();
         } else {
-          _error(_line, 'Unexpected character');
+          Lox.scanError(_line, 'Unexpected character');
         }
         break;
     }
@@ -131,7 +131,10 @@ class Scanner {
       _advance();
     }
 
-    if (_isAtEnd) _error(_line, 'Unterminated string.');
+    if (_isAtEnd) {
+      Lox.scanError(_line, 'Unterminated string.');
+      return;
+    }
 
     _advance();
     _addToken(TokenType.STRING, _source.substring(_start + 1, _idx - 1));
@@ -189,9 +192,5 @@ class Scanner {
     }
 
     return _source.codeUnitAt(_idx + 1);
-  }
-
-  void _error(int line, String message) {
-    throw SyntaxError(line, message);
   }
 }

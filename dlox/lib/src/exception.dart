@@ -1,43 +1,11 @@
 import 'token.dart';
 
-class LoxException implements Exception {
-  final exitCode = 65;
-  final String _message;
-  final Token? _token;
+class RuntimeError implements Exception {
+  final String message;
+  final Token token;
 
-  String get message => _message;
-  Token? get token => _token;
-
-  LoxException(this._message, [this._token]);
-}
-
-class SyntaxError extends LoxException {
-  final int line;
-
-  SyntaxError(this.line, String message) : super(message);
+  RuntimeError(this.token, this.message);
 
   @override
-  String toString() {
-    return '[line ${line}] Error: ${message}';
-  }
-}
-
-class RuntimeError extends LoxException {
-  @override
-  final exitCode = 70;
-
-  RuntimeError(Token token, String message) : super(message, token);
-
-  @override
-  String toString() => '${message}\n[line ${token!.line}]';
-}
-
-class ParseError extends LoxException {
-  ParseError(Token token, String message) : super(message, token);
-
-  @override
-  String toString() {
-    final location = token!.type == TokenType.EOF ? 'end' : token!.lexeme;
-    return "[line ${token!.line}] Error at '${location}': ${message}";
-  }
+  String toString() => '${message}\n[line ${token.line}]';
 }

@@ -1,6 +1,7 @@
 import 'environment.dart';
 import 'exception.dart';
 import 'expression.dart';
+import 'lox.dart';
 import 'nil.dart';
 import 'statement.dart';
 import 'token.dart';
@@ -11,8 +12,12 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   var _env = Environment();
 
   void interpret(List<Stmt> statements) {
-    for (final stmt in statements) {
-      _execute(stmt);
+    try {
+      for (final stmt in statements) {
+        _execute(stmt);
+      }
+    } on RuntimeError catch (e) {
+      Lox.runtimeError(e);
     }
   }
 
