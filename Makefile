@@ -10,7 +10,7 @@ clean:
 	@rm -rf $(BUILD_DIR)
 
 test: $(DLOX_BIN) $(TEST_BIN)
-	@build/lox_test chap08_statements -i build/dlox
+	@build/lox_test chap09_control -i build/dlox
 
 $(DLOX_BIN): $(DLOX_SOURCES)
 	@mkdir -p build

@@ -46,12 +46,52 @@ class Parser {
   }
 
   Stmt _statement() {
+    if (_match(TokenType.FOR)) return _forStatement();
     if (_match(TokenType.IF)) return _ifStatement();
     if (_match(TokenType.PRINT)) return _printStatement();
     if (_match(TokenType.WHILE)) return _whileStatement();
     if (_match(TokenType.LEFT_BRACE)) return BlockStmt(_block());
 
     return _expressionStatement();
+  }
+
+  Stmt _forStatement() {
+    _consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+    var initializer;
+    if (_match(TokenType.SEMICOLON)) {
+      initializer = null;
+    } else if (_match(TokenType.VAR)) {
+      initializer = _varDeclaration();
+    } else {
+      initializer = _expressionStatement();
+    }
+
+    var condition;
+    if (!_check(TokenType.SEMICOLON)) {
+      condition = _expression();
+    }
+    _consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+    var increment;
+    if (!_check(TokenType.RIGHT_PAREN)) {
+      increment = _expression();
+    }
+    _consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    var body = _statement();
+    if (increment != null) {
+      body = BlockStmt([body, ExpressionStmt(increment)]);
+    }
+
+    condition ??= LiteralExpr(true);
+    body = WhileStmt(condition, body);
+
+    if (initializer != null) {
+      body = BlockStmt([initializer, body]);
+    }
+
+    return body;
   }
 
   Stmt _ifStatement() {
