@@ -79,4 +79,9 @@ class AstPrinter implements ExprVisitor<String> {
       }
     }
   }
+
+  @override
+  String visitCallExpr(CallExpr expr) {
+    throw UnimplementedError();
+  }
 }

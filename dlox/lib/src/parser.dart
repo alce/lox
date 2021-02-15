@@ -30,11 +30,34 @@ class Parser {
 
   Stmt? _declaration() {
     try {
+      if (_match(TokenType.FUN)) return _function('function');
       if (_match(TokenType.VAR)) return _varDeclaration();
       return _statement();
     } on _ParseError catch (_) {
       _synchronize();
     }
+  }
+
+  Stmt _function(String kind) {
+    final name = _consume(TokenType.IDENT, 'Expect ${kind} name.');
+    _consume(TokenType.LEFT_PAREN, "Expect '(' after ${kind} name.");
+
+    final params = <Token>[];
+
+    if (!_check(TokenType.RIGHT_PAREN)) {
+      do {
+        if (params.length >= 250) {
+          _error(_peek(), "Can't have more than 255 parameters.");
+        }
+        params.add(_consume(TokenType.IDENT, 'Expect parameter name.'));
+      } while (_match(TokenType.COMMA));
+    }
+
+    _consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+    _consume(TokenType.LEFT_BRACE, "Expect '{' before ${kind} body.");
+
+    return FunctionStmt(name, params, _block());
   }
 
   Stmt _varDeclaration() {
@@ -254,7 +277,39 @@ class Parser {
       return UnaryExpr(operator, right);
     }
 
-    return _primary();
+    return _call();
+  }
+
+  Expr _call() {
+    var expr = _primary();
+
+    while (true) {
+      if (_match(TokenType.LEFT_PAREN)) {
+        expr = _finishCall(expr);
+      } else {
+        break;
+      }
+    }
+
+    return expr;
+  }
+
+  Expr _finishCall(Expr callee) {
+    final arguments = <Expr>[];
+
+    if (!_check(TokenType.RIGHT_PAREN)) {
+      do {
+        if (arguments.length >= 255) {
+          _error(_peek(), "Can't have more than 255 arguments.");
+        }
+        arguments.add(_expression());
+      } while (_match(TokenType.COMMA));
+    }
+
+    final paren =
+        _consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+    return CallExpr(callee, paren, arguments);
   }
 
   Expr _primary() {

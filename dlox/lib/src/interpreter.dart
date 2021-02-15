@@ -1,3 +1,6 @@
+import 'package:dlox/src/function.dart';
+
+import 'callable.dart';
 import 'environment.dart';
 import 'exception.dart';
 import 'expression.dart';
@@ -8,8 +11,28 @@ import 'token.dart';
 import 'util.dart';
 import 'visitor.dart';
 
+class _Clock implements LoxCallable {
+  @override
+  int get arity => 0;
+
+  @override
+  Object call(Interpreter interpreter, List<Object> args) {
+    return DateTime.now().second;
+  }
+
+  @override
+  String toString() => '<native fn>';
+}
+
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
-  var _env = Environment();
+  final globals = Environment();
+
+  var _env;
+
+  Interpreter() {
+    globals.define('clock', _Clock);
+    _env = globals;
+  }
 
   void interpret(List<Stmt> statements) {
     try {
@@ -30,7 +53,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
   @override
   void visitBlockStmt(BlockStmt stmt) =>
-      _executeBlock(stmt.statements, Environment(_env));
+      executeBlock(stmt.statements, Environment(_env));
 
   @override
   Object visitBinaryExpr(BinaryExpr expr) {
@@ -82,7 +105,32 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
+  Object visitCallExpr(CallExpr expr) {
+    final callee = _evaluate(expr.callee);
+
+    if (callee is! LoxCallable) {
+      throw RuntimeError(expr.paren, 'Can only call functions and classes.');
+    }
+
+    final args = <Object>[];
+    for (final arg in expr.arguments) {
+      args.add(_evaluate(arg));
+    }
+
+    if (args.length != callee.arity) {
+      throw RuntimeError(expr.paren,
+          'Expected ${callee.arity} arguments but got ${args.length}.');
+    }
+
+    return callee.call(this, args);
+  }
+
+  @override
   void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
+
+  @override
+  void visitFunctionStmt(FunctionStmt stmt) =>
+      _env.define(stmt.name.lexeme, LoxFunction(stmt));
 
   @override
   Object visitGroupingExpr(GroupingExpr expr) {
@@ -154,7 +202,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
   void _execute(Stmt stmt) => stmt.accept(this);
 
-  void _executeBlock(List<Stmt> statements, Environment env) {
+  void executeBlock(List<Stmt> statements, Environment env) {
     final prev = _env;
 
     try {

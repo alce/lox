@@ -26,6 +26,17 @@ class BinaryExpr implements Expr {
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitBinaryExpr(this);
 }
 
+class CallExpr implements Expr {
+  final Expr callee;
+  final Token paren;
+  final List<Expr> arguments;
+
+  CallExpr(this.callee, this.paren, this.arguments);
+
+  @override
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitCallExpr(this);
+}
+
 class GroupingExpr implements Expr {
   final Expr expression;
 

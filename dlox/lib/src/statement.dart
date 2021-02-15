@@ -24,6 +24,17 @@ class ExpressionStmt implements Stmt {
   T accept<T>(StmtVisitor<T> visitor) => visitor.visitExpressionStmt(this);
 }
 
+class FunctionStmt implements Stmt {
+  final Token name;
+  final List<Token> params;
+  final List<Stmt> body;
+
+  FunctionStmt(this.name, this.params, this.body);
+
+  @override
+  T accept<T>(StmtVisitor<T> visitor) => visitor.visitFunctionStmt(this);
+}
+
 class IfStmt implements Stmt {
   final Expr condition;
   final Stmt thenBranch;
