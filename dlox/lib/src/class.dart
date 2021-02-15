@@ -6,8 +6,9 @@ import 'interpreter.dart';
 class LoxClass implements LoxCallable {
   final String name;
   final Map<String, LoxFunction> _methods;
+  final LoxClass? superclass;
 
-  LoxClass(this.name, this._methods);
+  LoxClass(this.name, this.superclass, this._methods);
 
   @override
   int get arity => findMethod('init')?.arity ?? 0;
@@ -19,7 +20,8 @@ class LoxClass implements LoxCallable {
     return instance;
   }
 
-  LoxFunction? findMethod(String name) => _methods[name];
+  LoxFunction? findMethod(String name) =>
+      _methods[name] ?? superclass?.findMethod(name);
 
   @override
   String toString() => name;

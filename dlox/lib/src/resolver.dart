@@ -8,7 +8,7 @@ import 'visitor.dart';
 
 enum _FunctionType { NONE, FUNCTION, METHOD, INITIALIZER }
 
-enum _ClassType { NONE, CLASS }
+enum _ClassType { NONE, CLASS, SUBCLASS }
 
 class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   final Interpreter _interpreter;
@@ -49,6 +49,24 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     final enclosingClass = _currentClass;
     _currentClass = _ClassType.CLASS;
 
+    _define(stmt.name);
+
+    final superclass = stmt.superclass;
+
+    if (superclass != null && stmt.name.lexeme == superclass.name.lexeme) {
+      Lox.error(superclass.name, "A class can't inherit from itself.");
+    }
+
+    if (superclass != null) {
+      _currentClass = _ClassType.SUBCLASS;
+      _resolveExpr(superclass);
+    }
+
+    if (superclass != null) {
+      _beginScope();
+      _scopes.last['super'] = true;
+    }
+
     _beginScope();
 
     _scopes.last['this'] = true;
@@ -62,6 +80,9 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     });
 
     _endScope();
+
+    if (superclass != null) _endScope();
+
     _currentClass = enclosingClass;
   }
 
@@ -126,9 +147,20 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   }
 
   @override
+  void visitSuperExpr(SuperExpr expr) {
+    if (_currentClass == _ClassType.NONE) {
+      Lox.error(expr.keyword, "Can't use 'super' outside of a class.");
+    } else if (_currentClass != _ClassType.SUBCLASS) {
+      Lox.error(
+          expr.keyword, "Can't use 'super' in a class with no superclass.");
+    }
+    _resolveLocal(expr, expr.keyword);
+  }
+
+  @override
   void visitThisExpr(ThisExpr expr) {
     if (_currentClass == _ClassType.NONE) {
-      Lox.error(expr.keyword, "Can't use 'this' outside of a class");
+      Lox.error(expr.keyword, "Can't use 'this' outside of a class.");
       return;
     }
 

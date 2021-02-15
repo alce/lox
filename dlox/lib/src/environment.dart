@@ -7,6 +7,8 @@ class Environment {
 
   Environment([this._enclosing]);
 
+  Environment? get enclosing => _enclosing;
+
   void define(String name, Object value) => _values[name] = value;
 
   Object get(Token name) {
