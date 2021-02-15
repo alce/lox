@@ -15,6 +15,16 @@ class BlockStmt implements Stmt {
   T accept<T>(StmtVisitor<T> visitor) => visitor.visitBlockStmt(this);
 }
 
+class ClassStmt implements Stmt {
+  final Token name;
+  final List<FunctionStmt> methods;
+
+  ClassStmt(this.name, this.methods);
+
+  @override
+  T accept<T>(StmtVisitor<T> visitor) => visitor.visitClassStmt(this);
+}
+
 class ExpressionStmt implements Stmt {
   final Expr expression;
 

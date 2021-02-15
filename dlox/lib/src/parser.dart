@@ -30,6 +30,7 @@ class Parser {
 
   Stmt? _declaration() {
     try {
+      if (_match(TokenType.CLASS)) return _classDeclaration();
       if (_match(TokenType.FUN)) return _function('function');
       if (_match(TokenType.VAR)) return _varDeclaration();
       return _statement();
@@ -38,7 +39,21 @@ class Parser {
     }
   }
 
-  Stmt _function(String kind) {
+  Stmt _classDeclaration() {
+    final name = _consume(TokenType.IDENT, 'Expect class name.');
+    _consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+
+    final methods = <FunctionStmt>[];
+    while (!_check(TokenType.RIGHT_BRACE) && !_isAtEnd) {
+      methods.add(_function('method'));
+    }
+
+    _consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+    return ClassStmt(name, methods);
+  }
+
+  FunctionStmt _function(String kind) {
     final name = _consume(TokenType.IDENT, 'Expect ${kind} name.');
     _consume(TokenType.LEFT_PAREN, "Expect '(' after ${kind} name.");
 
@@ -197,6 +212,8 @@ class Parser {
       if (expr is VariableExpr) {
         final name = expr.name;
         return AssignExpr(name, value);
+      } else if (expr is GetExpr) {
+        return SetExpr(expr.object, expr.name, value);
       }
 
       _error(equals, 'Invalid assignment target.');
@@ -300,6 +317,10 @@ class Parser {
     while (true) {
       if (_match(TokenType.LEFT_PAREN)) {
         expr = _finishCall(expr);
+      } else if (_match(TokenType.DOT)) {
+        final name =
+            _consume(TokenType.IDENT, "Expect property name after '.'.");
+        expr = GetExpr(name, expr);
       } else {
         break;
       }

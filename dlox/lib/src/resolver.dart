@@ -44,6 +44,12 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   }
 
   @override
+  void visitClassStmt(ClassStmt stmt) {
+    _declare(stmt.name);
+    _define(stmt.name);
+  }
+
+  @override
   void visitExpressionStmt(ExpressionStmt stmt) =>
       _resolveExpr(stmt.expression);
 
@@ -53,6 +59,9 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     _define(stmt.name);
     _resolveFunction(stmt, _FunctionType.FUNCTION);
   }
+
+  @override
+  void visitGetExpr(GetExpr expr) => _resolveExpr(expr.object);
 
   @override
   void visitGroupingExpr(GroupingExpr expr) => _resolveExpr(expr.expression);
@@ -89,6 +98,12 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     if (stmt.value is! Nil) {
       _resolveExpr(stmt.value);
     }
+  }
+
+  @override
+  void visitSetExpr(SetExpr expr) {
+    _resolveExpr(expr.value);
+    _resolveExpr(expr.object);
   }
 
   @override

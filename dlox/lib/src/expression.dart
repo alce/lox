@@ -37,6 +37,16 @@ class CallExpr implements Expr {
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitCallExpr(this);
 }
 
+class GetExpr implements Expr {
+  final Token name;
+  final Expr object;
+
+  GetExpr(this.name, this.object);
+
+  @override
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitGetExpr(this);
+}
+
 class GroupingExpr implements Expr {
   final Expr expression;
 
@@ -64,6 +74,17 @@ class LogicalExpr implements Expr {
 
   @override
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitLogicalExpr(this);
+}
+
+class SetExpr implements Expr {
+  final Expr object;
+  final Token name;
+  final Expr value;
+
+  SetExpr(this.object, this.name, this.value);
+
+  @override
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitSetExpr(this);
 }
 
 class UnaryExpr implements Expr {

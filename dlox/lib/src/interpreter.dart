@@ -1,9 +1,11 @@
-import 'package:dlox/src/function.dart';
-
+import 'builtins.dart';
 import 'callable.dart';
+import 'class.dart';
 import 'environment.dart';
 import 'exception.dart';
 import 'expression.dart';
+import 'function.dart';
+import 'instance.dart';
 import 'lox.dart';
 import 'nil.dart';
 import 'return.dart';
@@ -12,26 +14,13 @@ import 'token.dart';
 import 'util.dart';
 import 'visitor.dart';
 
-class _Clock implements LoxCallable {
-  @override
-  int get arity => 0;
-
-  @override
-  Object call(Interpreter interpreter, List<Object> args) {
-    return DateTime.now().second;
-  }
-
-  @override
-  String toString() => '<native fn>';
-}
-
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   final globals = Environment();
   final _locals = <Expr, int>{};
   var _env;
 
   Interpreter() {
-    globals.define('clock', _Clock());
+    globals.define('clock', Clock());
     _env = globals;
   }
 
@@ -131,11 +120,27 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
+  void visitClassStmt(ClassStmt stmt) {
+    _env.define(stmt.name.lexeme, Nil());
+    final klass = LoxClass(stmt.name.lexeme);
+    _env.assign(stmt.name, klass);
+  }
+
+  @override
   void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
 
   @override
   void visitFunctionStmt(FunctionStmt stmt) =>
       _env.define(stmt.name.lexeme, LoxFunction(stmt, _env));
+
+  @override
+  Object visitGetExpr(GetExpr expr) {
+    final obj = _evaluate(expr.object);
+    if (obj is LoxInstance) {
+      return obj.get(expr.name);
+    }
+    throw RuntimeError(expr.name, 'Only instances have properties.');
+  }
 
   @override
   Object visitGroupingExpr(GroupingExpr expr) => _evaluate(expr.expression);
@@ -183,6 +188,19 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     value ??= Nil();
 
     throw Return(value);
+  }
+
+  @override
+  Object visitSetExpr(SetExpr expr) {
+    final obj = _evaluate(expr.object);
+
+    if (obj is! LoxInstance) {
+      throw RuntimeError(expr.name, 'Only instances have fields.');
+    }
+
+    final value = _evaluate(expr.value);
+    obj.set(expr.name, value);
+    return value;
   }
 
   @override

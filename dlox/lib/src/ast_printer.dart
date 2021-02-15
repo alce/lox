@@ -8,9 +8,8 @@ class AstPrinter implements ExprVisitor<String> {
   String print(Expr expr) => expr.accept(this);
 
   @override
-  String visitAssignExpr(AssignExpr expr) {
-    return _parenthesize2('=', [expr.name.lexeme, expr.value]);
-  }
+  String visitAssignExpr(AssignExpr expr) =>
+      _parenthesize2('=', [expr.name.lexeme, expr.value]);
 
   @override
   String visitBinaryExpr(BinaryExpr expr) =>
@@ -24,9 +23,7 @@ class AstPrinter implements ExprVisitor<String> {
   String visitLiteralExpr(LiteralExpr expr) => expr.value.toString();
 
   @override
-  String visitLogicalExpr(LogicalExpr expr) {
-    throw UnimplementedError();
-  }
+  String visitLogicalExpr(LogicalExpr expr) => throw UnimplementedError();
 
   @override
   String visitNil(Nil expr) => 'nil';
@@ -81,7 +78,11 @@ class AstPrinter implements ExprVisitor<String> {
   }
 
   @override
-  String visitCallExpr(CallExpr expr) {
-    throw UnimplementedError();
-  }
+  String visitCallExpr(CallExpr expr) => throw UnimplementedError();
+
+  @override
+  String visitGetExpr(GetExpr expr) => throw UnimplementedError();
+
+  @override
+  String visitSetExpr(SetExpr expr) => throw UnimplementedError();
 }
