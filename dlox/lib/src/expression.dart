@@ -87,6 +87,15 @@ class SetExpr implements Expr {
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitSetExpr(this);
 }
 
+class ThisExpr implements Expr {
+  final Token keyword;
+
+  ThisExpr(this.keyword);
+
+  @override
+  T accept<T>(ExprVisitor<T> visitor) => visitor.visitThisExpr(this);
+}
+
 class UnaryExpr implements Expr {
   final Expr right;
   final Token operator;

@@ -352,6 +352,7 @@ class Parser {
     if (_match(TokenType.TRUE)) return LiteralExpr(true);
     if (_match(TokenType.NIL)) return LiteralExpr(Nil());
     if (_match(TokenType.IDENT)) return VariableExpr(_previous());
+    if (_match(TokenType.THIS)) return ThisExpr(_previous());
 
     if (_matchAny([TokenType.NUMBER, TokenType.STRING])) {
       return LiteralExpr(_previous().literal!);

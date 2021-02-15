@@ -6,16 +6,16 @@ import 'statement.dart';
 import 'token.dart';
 import 'visitor.dart';
 
-enum _FunctionType {
-  NONE,
-  FUNCTION,
-  METHOD,
-}
+enum _FunctionType { NONE, FUNCTION, METHOD, INITIALIZER }
+
+enum _ClassType { NONE, CLASS }
 
 class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   final Interpreter _interpreter;
   final _scopes = <Map<String, bool>>[];
+
   var _currentFunction = _FunctionType.NONE;
+  var _currentClass = _ClassType.NONE;
 
   Resolver(this._interpreter);
 
@@ -46,9 +46,23 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
 
   @override
   void visitClassStmt(ClassStmt stmt) {
-    _declare(stmt.name);
-    _define(stmt.name);
-    stmt.methods.forEach((m) => _resolveFunction(m, _FunctionType.METHOD));
+    final enclosingClass = _currentClass;
+    _currentClass = _ClassType.CLASS;
+
+    _beginScope();
+
+    _scopes.last['this'] = true;
+
+    stmt.methods.forEach((m) {
+      final declaration = m.name.lexeme == 'init'
+          ? _FunctionType.INITIALIZER
+          : _FunctionType.METHOD;
+
+      _resolveFunction(m, declaration);
+    });
+
+    _endScope();
+    _currentClass = enclosingClass;
   }
 
   @override
@@ -98,6 +112,9 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
       Lox.error(stmt.keyword, "Can't return from top-level code.");
     }
     if (stmt.value is! Nil) {
+      if (_currentFunction == _FunctionType.INITIALIZER) {
+        Lox.error(stmt.keyword, "Can't return a value from an initializer.");
+      }
       _resolveExpr(stmt.value);
     }
   }
@@ -106,6 +123,16 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   void visitSetExpr(SetExpr expr) {
     _resolveExpr(expr.value);
     _resolveExpr(expr.object);
+  }
+
+  @override
+  void visitThisExpr(ThisExpr expr) {
+    if (_currentClass == _ClassType.NONE) {
+      Lox.error(expr.keyword, "Can't use 'this' outside of a class");
+      return;
+    }
+
+    _resolveLocal(expr, expr.keyword);
   }
 
   @override

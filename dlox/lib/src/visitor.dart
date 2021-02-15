@@ -10,6 +10,7 @@ abstract class ExprVisitor<T> {
   T visitGroupingExpr(GroupingExpr expr);
   T visitLogicalExpr(LogicalExpr expr);
   T visitSetExpr(SetExpr expr);
+  T visitThisExpr(ThisExpr expr);
   T visitLiteralExpr(LiteralExpr expr);
   T visitUnaryExpr(UnaryExpr expr);
   T visitNil(Nil expr);

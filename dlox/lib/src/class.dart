@@ -10,11 +10,12 @@ class LoxClass implements LoxCallable {
   LoxClass(this.name, this._methods);
 
   @override
-  int get arity => 0;
+  int get arity => findMethod('init')?.arity ?? 0;
 
   @override
   Object call(Interpreter interpreter, List<Object> args) {
     final instance = LoxInstance(this);
+    findMethod('init')?.bind(instance).call(interpreter, args);
     return instance;
   }
 

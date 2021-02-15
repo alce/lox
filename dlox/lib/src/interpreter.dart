@@ -126,7 +126,8 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     final methods = stmt.methods.fold(
       <String, LoxFunction>{},
       (Map<String, LoxFunction> acc, method) {
-        acc[method.name.lexeme] = LoxFunction(method, _env);
+        final lexeme = method.name.lexeme;
+        acc[lexeme] = LoxFunction(method, _env, lexeme == 'init');
         return acc;
       },
     );
@@ -139,7 +140,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
   @override
   void visitFunctionStmt(FunctionStmt stmt) =>
-      _env.define(stmt.name.lexeme, LoxFunction(stmt, _env));
+      _env.define(stmt.name.lexeme, LoxFunction(stmt, _env, false));
 
   @override
   Object visitGetExpr(GetExpr expr) {
@@ -212,6 +213,9 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
+  Object visitThisExpr(ThisExpr expr) => _lookup(expr.keyword, expr);
+
+  @override
   Object visitUnaryExpr(UnaryExpr expr) {
     final right = _evaluate(expr.right);
 
@@ -278,7 +282,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
     final distance = _locals[expr];
 
     if (distance != null) {
-      return _env.getAt(distance, name.lexeme);
+      return _env.getAt(distance, name.lexeme) ?? Nil();
     } else {
       return globals.get(name);
     }
