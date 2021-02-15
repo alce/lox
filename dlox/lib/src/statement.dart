@@ -55,6 +55,16 @@ class PrintStmt implements Stmt {
   T accept<T>(StmtVisitor<T> visitor) => visitor.visitPrintStmt(this);
 }
 
+class ReturnStmt implements Stmt {
+  final Token keyword;
+  final Expr value;
+
+  ReturnStmt(this.keyword, this.value);
+
+  @override
+  T accept<T>(StmtVisitor<T> visitor) => visitor.visitReturnStmt(this);
+}
+
 class VarStmt implements Stmt {
   final Token name;
   final Expr? initializer;

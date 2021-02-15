@@ -20,6 +20,7 @@ abstract class StmtVisitor<T> {
   T visitFunctionStmt(FunctionStmt stmt);
   T visitIfStmt(IfStmt stmt);
   T visitPrintStmt(PrintStmt stmt);
+  T visitReturnStmt(ReturnStmt stmt);
   T visitVarStmt(VarStmt stmt);
   T visitWhileStmt(WhileStmt stmt);
 }

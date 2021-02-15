@@ -117,7 +117,7 @@ class Scanner {
         } else if (isAlpha(c)) {
           _identifier();
         } else {
-          Lox.scanError(_line, 'Unexpected character');
+          Lox.scanError(_line, 'Unexpected character.');
         }
         break;
     }

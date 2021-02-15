@@ -6,6 +6,7 @@ import 'exception.dart';
 import 'expression.dart';
 import 'lox.dart';
 import 'nil.dart';
+import 'return.dart';
 import 'statement.dart';
 import 'token.dart';
 import 'util.dart';
@@ -129,13 +130,13 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
 
   @override
-  void visitFunctionStmt(FunctionStmt stmt) =>
-      _env.define(stmt.name.lexeme, LoxFunction(stmt));
+  void visitFunctionStmt(FunctionStmt stmt) {
+    final func = LoxFunction(stmt, _env);
+    _env.define(stmt.name.lexeme, func);
+  }
 
   @override
-  Object visitGroupingExpr(GroupingExpr expr) {
-    return _evaluate(expr.expression);
-  }
+  Object visitGroupingExpr(GroupingExpr expr) => _evaluate(expr.expression);
 
   @override
   void visitIfStmt(IfStmt stmt) {
@@ -170,6 +171,17 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   @override
   void visitPrintStmt(PrintStmt stmt) =>
       print(stringify(_evaluate(stmt.expression)));
+
+  @override
+  void visitReturnStmt(ReturnStmt stmt) {
+    var value;
+
+    if (stmt.value is! Nil) {
+      value = _evaluate(stmt.value);
+    }
+
+    throw Return(value);
+  }
 
   @override
   Object visitUnaryExpr(UnaryExpr expr) {
