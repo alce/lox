@@ -37,9 +37,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
   void interpret(List<Stmt> statements) {
     try {
-      for (final stmt in statements) {
-        _execute(stmt);
-      }
+      statements.forEach(_execute);
     } on RuntimeError catch (e) {
       Lox.runtimeError(e);
     }
@@ -113,10 +111,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
       throw RuntimeError(expr.paren, 'Can only call functions and classes.');
     }
 
-    final args = <Object>[];
-    for (final arg in expr.arguments) {
-      args.add(_evaluate(arg));
-    }
+    final args = expr.arguments.map(_evaluate).toList();
 
     if (args.length != callee.arity) {
       throw RuntimeError(expr.paren,
@@ -130,10 +125,8 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   void visitExpressionStmt(ExpressionStmt stmt) => _evaluate(stmt.expression);
 
   @override
-  void visitFunctionStmt(FunctionStmt stmt) {
-    final func = LoxFunction(stmt, _env);
-    _env.define(stmt.name.lexeme, func);
-  }
+  void visitFunctionStmt(FunctionStmt stmt) =>
+      _env.define(stmt.name.lexeme, LoxFunction(stmt, _env));
 
   @override
   Object visitGroupingExpr(GroupingExpr expr) => _evaluate(expr.expression);
@@ -148,9 +141,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   @override
-  Object visitLiteralExpr(LiteralExpr expr) {
-    return expr.value;
-  }
+  Object visitLiteralExpr(LiteralExpr expr) => expr.value;
 
   @override
   Object visitLogicalExpr(LogicalExpr expr) {
@@ -221,9 +212,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
     try {
       _env = env;
-      for (final stmt in statements) {
-        _execute(stmt);
-      }
+      statements.forEach(_execute);
     } finally {
       _env = prev;
     }
@@ -245,9 +234,8 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
   }
 
   void _checkNumberOperands(Token operator, Object left, Object right) {
-    if (left is double && right is double) {
-      return;
+    if (!(left is double && right is double)) {
+      throw RuntimeError(operator, 'Operands must be numbers.');
     }
-    throw RuntimeError(operator, 'Operands must be numbers.');
   }
 }

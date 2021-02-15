@@ -3,12 +3,10 @@ import 'token.dart';
 
 class Environment {
   final Environment? _enclosing;
-
   final _values = <String, Object>{};
 
   Environment([this._enclosing]);
 
-  // implies variables can be redefined.
   void define(String name, Object value) => _values[name] = value;
 
   Object get(Token name) {
@@ -23,10 +21,6 @@ class Environment {
     throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
   }
 
-  // no implicit variable declaration.
-  // a = 3; => throws
-  // var a;
-  // a = 3 => ok
   void assign(Token name, Object value) {
     if (_values.containsKey(name.lexeme)) {
       _values[name.lexeme] = value;

@@ -25,16 +25,10 @@ String stringify(Object object) {
 
 // false and Nil are falsy, everything else is truthy;
 bool isTruthy(Object value) {
-  if (value is Nil) {
-    return false;
-  }
-  if (value is bool) {
-    return value;
-  }
+  if (value is Nil) return false;
+  if (value is bool) return value;
 
   return true;
 }
 
-bool isEqual(Object? a, Object? b) {
-  return a == b;
-}
+bool isEqual(Object? a, Object? b) => a == b;

@@ -18,9 +18,9 @@ class LoxFunction implements LoxCallable {
   Object call(Interpreter interpreter, List<Object> args) {
     final env = Environment(_closure);
 
-    for (var i = 0; i < _declaration.params.length; i++) {
-      env.define(_declaration.params[i].lexeme, args[i]);
-    }
+    _declaration.params
+        .asMap()
+        .forEach((i, v) => env.define(v.lexeme, args[i]));
 
     try {
       interpreter.executeBlock(_declaration.body, env);

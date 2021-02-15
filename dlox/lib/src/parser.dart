@@ -54,7 +54,6 @@ class Parser {
     }
 
     _consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
-
     _consume(TokenType.LEFT_BRACE, "Expect '{' before ${kind} body.");
 
     return FunctionStmt(name, params, _block());
@@ -128,8 +127,8 @@ class Parser {
     _consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
 
     final thenBranch = _statement();
-    var elseBranch;
 
+    var elseBranch;
     if (_match(TokenType.ELSE)) {
       elseBranch = _statement();
     }
@@ -357,25 +356,19 @@ class Parser {
 
   bool _matchAny(List<TokenType> types) {
     for (final type in types) {
-      if (_match(type)) {
-        return true;
-      }
+      if (_match(type)) return true;
     }
 
     return false;
   }
 
   bool _check(TokenType type) {
-    if (_isAtEnd) {
-      return false;
-    }
+    if (_isAtEnd) return false;
     return _peek().type == type;
   }
 
   Token _advance() {
-    if (!_isAtEnd) {
-      _idx++;
-    }
+    if (!_isAtEnd) _idx++;
     return _previous();
   }
 

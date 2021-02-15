@@ -43,6 +43,7 @@ class Scanner {
       _scanToken();
     }
     _tokens.add(Token(TokenType.EOF, '', Nil(), _line));
+
     return _tokens;
   }
 
@@ -125,9 +126,7 @@ class Scanner {
 
   void _string() {
     while (_peek() != $double_quote && !_isAtEnd) {
-      if (_peek() == $lf) {
-        _line++;
-      }
+      if (_peek() == $lf) _line++;
       _advance();
     }
 
@@ -180,17 +179,12 @@ class Scanner {
   }
 
   int _peek() {
-    if (_isAtEnd) {
-      return $nul;
-    }
+    if (_isAtEnd) return $nul;
     return _source.codeUnitAt(_idx);
   }
 
   int _peekNext() {
-    if (_idx + 1 >= _source.length) {
-      return $nul;
-    }
-
+    if (_idx + 1 >= _source.length) return $nul;
     return _source.codeUnitAt(_idx + 1);
   }
 }

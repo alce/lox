@@ -8,9 +8,7 @@ import 'token.dart';
 
 class Lox {
   static final _interpreter = Interpreter();
-
   static bool _hadError = false;
-
   static bool _hadRuntimeError = false;
 
   static void main(List<String> args) {
