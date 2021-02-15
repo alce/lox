@@ -24,9 +24,6 @@ class BinaryExpr implements Expr {
 
   @override
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitBinaryExpr(this);
-
-  @override
-  String toString() => 'BIN(${left} ${operator.lexeme} ${right})';
 }
 
 class GroupingExpr implements Expr {
@@ -45,9 +42,6 @@ class LiteralExpr implements Expr {
 
   @override
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitLiteralExpr(this);
-
-  @override
-  String toString() => 'LIT(${value})';
 }
 
 class LogicalExpr implements Expr {
@@ -69,9 +63,6 @@ class UnaryExpr implements Expr {
 
   @override
   T accept<T>(ExprVisitor<T> visitor) => visitor.visitUnaryExpr(this);
-
-  @override
-  String toString() => 'UN(${operator.lexeme} ${right})';
 }
 
 class VariableExpr implements Expr {

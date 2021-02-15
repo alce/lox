@@ -1,5 +1,3 @@
-import 'package:dlox/src/nil.dart';
-
 enum TokenType {
   // Single character tokens
   LEFT_PAREN,
@@ -61,19 +59,6 @@ class Token {
   @override
   String toString() {
     var token = type.toString().split('.').last;
-
     return '${token} ${lexeme} ${literal ?? ''}';
   }
-
-  String display() {
-    var token = type.toString().split('.').last;
-
-    if (_hasLiteral()) {
-      token = '${token} ${literal}';
-    }
-
-    return token;
-  }
-
-  bool _hasLiteral() => literal != null && literal is! Nil;
 }
