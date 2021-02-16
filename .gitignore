@@ -1,5 +1,6 @@
-/build/
+/bin/
 /tool/.dart_tool/
 /tool/.packages/
+/rlox/target/
 
 xcuserdata/
