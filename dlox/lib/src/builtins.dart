@@ -7,7 +7,7 @@ class Clock implements LoxCallable {
 
   @override
   Object call(Interpreter interpreter, List<Object> args) =>
-      DateTime.now().second;
+      DateTime.now().millisecondsSinceEpoch / 1000.0;
 
   @override
   String toString() => '<native fn>';
