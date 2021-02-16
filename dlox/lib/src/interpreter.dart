@@ -214,9 +214,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
       value = _evaluate(stmt.value);
     }
 
-    value ??= Nil();
-
-    throw Return(value);
+    throw Return(value ?? Nil());
   }
 
   @override
@@ -229,6 +227,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<void> {
 
     final value = _evaluate(expr.value);
     obj.set(expr.name, value);
+
     return value;
   }
 

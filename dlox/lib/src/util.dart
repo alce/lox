@@ -23,7 +23,6 @@ String stringify(Object object) {
   return object.toString();
 }
 
-// false and Nil are falsy, everything else is truthy;
 bool isTruthy(Object value) {
   if (value is Nil) return false;
   if (value is bool) return value;

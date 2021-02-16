@@ -12,15 +12,8 @@ class Environment {
   void define(String name, Object value) => _values[name] = value;
 
   Object get(Token name) {
-    if (_values.containsKey(name.lexeme)) {
-      return _values[name.lexeme]!;
-    }
-
-    if (_enclosing != null) {
-      return _enclosing!.get(name);
-    }
-
-    throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
+    final value = _values[name.lexeme] ?? _enclosing?.get(name);
+    return value ?? undefinedVariable(name, name.lexeme);
   }
 
   Object? getAt(int distance, String name) =>
@@ -37,7 +30,7 @@ class Environment {
       return;
     }
 
-    throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
+    undefinedVariable(name, name.lexeme);
   }
 
   void assignAt(int distance, Token name, Object value) =>
@@ -49,5 +42,9 @@ class Environment {
       env = env?._enclosing;
     }
     return env;
+  }
+
+  Never undefinedVariable(Token token, String varName) {
+    throw RuntimeError(token, "Undefined variable '${varName}'.");
   }
 }

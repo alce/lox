@@ -1,28 +1,30 @@
 BUILD_DIR := build
 TOOL_SOURCES := tool/pubspec.lock $(shell find tool -name '*.dart')
-DLOX_SOURCES := dlox/pubspec.lock $(shell find dlox -name '*.dart')
-DLOX_BIN := $(BUILD_DIR)/dlox
-TEST_BIN := $(BUILD_DIR)/lox_test
+INTERPRETER_SOURCES := dlox/pubspec.lock $(shell find dlox -name '*.dart')
+INTERPRETER := $(BUILD_DIR)/dlox
+TEST_RUNNER := $(BUILD_DIR)/test_runner
 
 default: test
 
 clean:
 	@rm -rf $(BUILD_DIR)
 
-test: $(DLOX_BIN) $(TEST_BIN)
-	@build/lox_test jlox -i build/dlox
+test: $(INTERPRETER) $(TEST_RUNNER)
+	@echo "Testing interpreter..."
+	@build/test_runner jlox -i build/dlox
 
-test_dlox: $(DLOX_BIN) $(TEST_BIN)
-	@build/lox_test jlox -i build/dlox
+test_dlox: $(INTERPRETER) $(TEST_RUNNER)
+	@echo "Testing interpreter..."
+	@build/test_runner jlox -i build/dlox
 
-$(DLOX_BIN): $(DLOX_SOURCES)
+$(INTERPRETER): $(INTERPRETER_SOURCES)
 	@mkdir -p build
-	@echo "Compiling dart interpreter..."
+	@echo "Compiling interpreter..."
 	@dart compile exe -o build/dlox dlox/bin/lox.dart >/dev/null
 
-$(TEST_BIN): $(TOOL_SOURCES)
+$(TEST_RUNNER): $(TOOL_SOURCES)
 	@mkdir -p build
 	@echo "Compiling test runner..."
-	@dart compile exe -o build/lox_test tool/bin/test.dart >/dev/null
+	@dart compile exe -o build/test_runner tool/bin/test.dart >/dev/null
 
 .PHONY: clean

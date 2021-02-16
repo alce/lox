@@ -9,17 +9,10 @@ class LoxInstance {
   LoxInstance(this._klass);
 
   Object get(Token name) {
-    final obj = _fields[name.lexeme];
+    final val =
+        _fields[name.lexeme] ?? _klass.findMethod(name.lexeme)?.bind(this);
 
-    if (obj != null) {
-      return obj;
-    }
-
-    final method = _klass.findMethod(name.lexeme);
-
-    if (method != null) {
-      return method.bind(this);
-    }
+    if (val != null) return val;
 
     throw RuntimeError(name, "Undefined property '${name.lexeme}'.");
   }

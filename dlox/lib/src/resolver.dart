@@ -60,9 +60,6 @@ class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     if (superclass != null) {
       _currentClass = _ClassType.SUBCLASS;
       _resolveExpr(superclass);
-    }
-
-    if (superclass != null) {
       _beginScope();
       _scopes.last['super'] = true;
     }

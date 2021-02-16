@@ -83,13 +83,10 @@ class Parser {
 
   Stmt _varDeclaration() {
     final name = _consume(TokenType.IDENT, 'Expect variable name.');
-    Expr initializer = Nil();
-
-    if (_match(TokenType.EQUAL)) {
-      initializer = _expression();
-    }
+    final initializer = _match(TokenType.EQUAL) ? _expression() : Nil();
 
     _consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+
     return VarStmt(name, initializer);
   }
 
@@ -186,15 +183,9 @@ class Parser {
 
   Stmt _returnStatement() {
     final keyword = _previous();
-    var value;
-
-    if (!_check(TokenType.SEMICOLON)) {
-      value = _expression();
-    }
-
-    value ??= Nil();
-
+    final value = _check(TokenType.SEMICOLON) ? Nil() : _expression();
     _consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+
     return ReturnStmt(keyword, value);
   }
 
