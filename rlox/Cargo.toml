@@ -4,4 +4,7 @@ version = "0.1.0"
 authors = ["Juan Alvarez <j@yabit.io>"]
 edition = "2018"
 
+[lib]
+doctest = false
+
 [dependencies]
