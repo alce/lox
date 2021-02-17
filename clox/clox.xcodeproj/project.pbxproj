@@ -11,6 +11,7 @@
 		6B6A47D625D392C200CF3EB4 /* chunk.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A47D525D392C200CF3EB4 /* chunk.c */; };
 		6B6A47DA25D3976400CF3EB4 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A47D925D3976400CF3EB4 /* memory.c */; };
 		6B6A482A25DDD0AA00CF3EB4 /* debug.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A482925DDD0AA00CF3EB4 /* debug.c */; };
+		6B6A482E25DDD31600CF3EB4 /* value.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A482D25DDD31600CF3EB4 /* value.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -35,6 +36,8 @@
 		6B6A47D925D3976400CF3EB4 /* memory.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
 		6B6A482825DDD0AA00CF3EB4 /* debug.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = debug.h; sourceTree = "<group>"; };
 		6B6A482925DDD0AA00CF3EB4 /* debug.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = debug.c; sourceTree = "<group>"; };
+		6B6A482C25DDD31600CF3EB4 /* value.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = value.h; sourceTree = "<group>"; };
+		6B6A482D25DDD31600CF3EB4 /* value.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = value.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,6 +54,8 @@
 		6B6A47BD25D391C700CF3EB4 = {
 			isa = PBXGroup;
 			children = (
+				6B6A482C25DDD31600CF3EB4 /* value.h */,
+				6B6A482D25DDD31600CF3EB4 /* value.c */,
 				6B6A482825DDD0AA00CF3EB4 /* debug.h */,
 				6B6A482925DDD0AA00CF3EB4 /* debug.c */,
 				6B6A47D925D3976400CF3EB4 /* memory.c */,
@@ -127,6 +132,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6B6A482E25DDD31600CF3EB4 /* value.c in Sources */,
 				6B6A47CA25D391C700CF3EB4 /* main.c in Sources */,
 				6B6A47DA25D3976400CF3EB4 /* memory.c in Sources */,
 				6B6A47D625D392C200CF3EB4 /* chunk.c in Sources */,
