@@ -10,8 +10,8 @@ void* reallocate(void * pointer, size_t old_size, size_t new_size) {
     
     void* res = realloc(pointer, new_size);
     if (res == NULL) {
-        // failed to allocate memory
         exit(1);
     }
+    
     return res;
 }
