@@ -8,7 +8,7 @@ const STACK_MAX: usize = 256;
 use OpCode::*;
 
 #[derive(Debug)]
-struct Vm {
+pub struct Vm {
     chunk: Chunk,
     ip: usize,
     stack: [Value; STACK_MAX],
@@ -95,12 +95,11 @@ impl Vm {
     }
 
     fn trace(&mut self) {
-        self.chunk.disassemble_instruction(self.ip);
         print!("          ");
-        println!(
-            "{:?}",
-            self.stack.iter().take(self.stack_top).collect::<Vec<_>>()
-        );
+        self.stack[..self.stack_top]
+            .iter()
+            .for_each(|v| print!("[ {:?} ]", v));
         println!();
+        self.chunk.disassemble_instruction(self.ip);
     }
 }

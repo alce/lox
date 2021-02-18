@@ -4,11 +4,11 @@
 #include "value.h"
 
 
-void dissasemble_chunk(Chunk* chunk, const char* name){
+void disassemble_chunk(Chunk* chunk, const char* name){
     printf("== %s ==\n", name);
     
     for (int offset = 0; offset < chunk->count;) {
-        offset = dissasemble_instruction(chunk, offset);
+        offset = disassemble_instruction(chunk, offset);
     }
 }
 
@@ -25,7 +25,7 @@ static int constant_instruction(const char* name, Chunk* chunk, int offset) {
     return offset + 2;
 }
 
-int dissasemble_instruction(Chunk* chunk, int offset) {
+int disassemble_instruction(Chunk* chunk, int offset) {
     printf("%04d ", offset);
     
     if (offset > 0 &&
@@ -42,6 +42,16 @@ int dissasemble_instruction(Chunk* chunk, int offset) {
             return simple_instruction("OP_RETURN", offset);
         case OP_CONSTANT:
             return constant_instruction("OP_CONSTANT", chunk, offset);
+        case OP_NEGATE:
+            return simple_instruction("OP_NEGATE", offset);
+        case OP_ADD:
+            return simple_instruction("OP_ADD", offset);
+        case OP_SUBTRACT:
+            return simple_instruction("OP_SUBTRACT", offset);
+        case OP_MULTIPLY:
+            return simple_instruction("OP_MULTIPLY", offset);
+        case OP_DIVIDE:
+            return simple_instruction("OP_DIVIDE", offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1 ;
