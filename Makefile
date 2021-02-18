@@ -1,38 +1,51 @@
-BIN_DIR := bin
-TOOL_SOURCES := tool/pubspec.lock $(shell find tool -name '*.dart')
-INTERPRETER_SOURCES := dlox/pubspec.lock $(shell find dlox -name '*.dart')
-VM_SOURCES := rlox/Cargo.lock $(shell find rlox -name '*.rs')
-VM := $(BIN_DIR)/rlox
-INTERPRETER := $(BIN_DIR)/dlox
-TEST_RUNNER := $(BIN_DIR)/test_runner
+TOOL_SRC := tool/pubspec.lock $(shell find tool -name '*.dart')
+DART_SRC := dlox/pubspec.lock $(shell find dlox -name '*.dart')
+RUST_SRC := rlox/Cargo.lock $(shell find rlox -name '*.rs')
+C_SRC := $(shell find clox -name '*.c')
 
-default: test_vm
+DLOX := bin/dlox
+RLOX := bin/rlox
+CLOX := bin/clox
+TEST_RUNNER := bin/test_runner
+
+CFLAGS := -std=c99 -O3 -flto -Wall -Wextra -Werror -Wno-unused-parameter
+
+all: test_dart test_c test_rust
 
 clean:
-	@rm -rf $(BIN_DIR)
+	@rm -rf bin
 
-test: $(INTERPRETER) $(TEST_RUNNER)
-	@echo "Testing interpreter..."
-	@bin/test_runner jlox -i bin/dlox
+test_dart: $(DLOX) $(TEST_RUNNER)
+	@echo "Testing Dart interpreter..."
+	@$(TEST_RUNNER) jlox -i $(DLOX)
 
-test_vm: $(VM) $(TEST_RUNNER)
-	@echo "Testing virtual machine..."
-	@bin/test_runner chap17_compiling -i bin/rlox
+test_rust: $(RLOX) $(TEST_RUNNER)
+	@echo "Testing Rust VM..."
+	@$(TEST_RUNNER) chap17_compiling -i $(RLOX)
 
-$(VM): $(VM_SOURCES)
+test_c: $(CLOX) $(TEST_RUNNER)
+	@echo "Testing C VM..."
+	@$(TEST_RUNNER) chap17_compiling -i $(CLOX)
+
+$(DLOX): $(DART_SRC)
 	@mkdir -p bin
-	@echo "Compiling virtual machine..."
+	@echo "Compiling Dart interpreter..."
+	@dart compile exe -o $(DLOX) dlox/bin/lox.dart >/dev/null
+
+$(RLOX): $(RUST_SRC)
+	@mkdir -p bin
+	@echo "Compiling Rust VM..."
 	@cd rlox && cargo -q build --release
 	@cp rlox/target/release/rlox bin
 
-$(INTERPRETER): $(INTERPRETER_SOURCES)
+$(CLOX): $(C_SRC)
 	@mkdir -p bin
-	@echo "Compiling interpreter..."
-	@dart compile exe -o bin/dlox dlox/bin/lox.dart >/dev/null
+	@echo "Compiling C VM..."
+	@$(CC) $(CFLAGS) $(C_SRC) -o bin/clox
 
-$(TEST_RUNNER): $(TOOL_SOURCES)
+$(TEST_RUNNER): $(TOOL_SRC)
 	@mkdir -p bin
 	@echo "Compiling test runner..."
-	@dart compile exe -o bin/test_runner tool/bin/test.dart >/dev/null
+	@dart compile exe -o $(TEST_RUNNER) tool/bin/test.dart >/dev/null
 
 .PHONY: clean
