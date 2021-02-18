@@ -35,11 +35,11 @@ impl<'a> Scanner<'a> {
     pub fn scan(mut self) -> Vec<Token<'a>> {
         while let Some((i, cr)) = self.iter.next() {
             match cr {
-                '(' => self.emit(LeftParen),
-                ')' => self.emit(RightParen),
-                '{' => self.emit(LeftBrace),
-                '}' => self.emit(RightBrace),
-                ';' => self.emit(Semicolon),
+                '(' => self.emit(LParen),
+                ')' => self.emit(RParen),
+                '{' => self.emit(LBrace),
+                '}' => self.emit(RBrace),
+                ';' => self.emit(Semi),
                 ',' => self.emit(Comma),
                 '.' => self.emit(Dot),
                 '-' => self.emit(Minus),
@@ -57,10 +57,10 @@ impl<'a> Scanner<'a> {
                     self.emit(Slash)
                 }
                 '*' => self.emit(Star),
-                '!' => self.peek_and_emit(Bang, BangEqual),
-                '=' => self.peek_and_emit(Equal, EqualEqual),
-                '<' => self.peek_and_emit(Less, LessEqual),
-                '>' => self.peek_and_emit(Greater, GreaterEqual),
+                '!' => self.peek_and_emit(Bang, BangEq),
+                '=' => self.peek_and_emit(Eq, EqEq),
+                '<' => self.peek_and_emit(Lt, LtEq),
+                '>' => self.peek_and_emit(Gt, GtEq),
                 '"' => self.string(i),
                 '\n' => {
                     self.line += 1;
@@ -108,8 +108,8 @@ impl<'a> Scanner<'a> {
             self.consume_digits();
         }
 
-        let end = self.end_position();
-        self.emit(Number(&self.source[start..end]));
+        let src = &self.source[start..self.end_position()];
+        self.emit(Num(src));
     }
 
     fn identifier(&mut self, start: usize) {
@@ -120,8 +120,7 @@ impl<'a> Scanner<'a> {
             self.iter.next();
         }
 
-        let end = self.end_position();
-        let src = &self.source[start..end];
+        let src = &self.source[start..self.end_position()];
         self.emit(src.parse().unwrap_or(Ident(src)))
     }
 
@@ -179,16 +178,16 @@ mod tests {
 
         let expected = [
             Minus,
-            LeftParen,
-            Number("2"),
+            LParen,
+            Num("2"),
             Plus,
-            Number("2"),
-            RightParen,
+            Num("2"),
+            RParen,
             Star,
-            Number("8"),
+            Num("8"),
             Slash,
-            Number("2.2"),
-            Semicolon,
+            Num("2.2"),
+            Semi,
             EOF,
         ];
 
@@ -223,13 +222,13 @@ mod tests {
         );
 
         let expected = [
-            Number("3"),
+            Num("3"),
             And,
             Var,
             Ident("foo"),
             Fun,
             Else,
-            Number("4"),
+            Num("4"),
             Super,
             Class,
             Or,

@@ -10,30 +10,30 @@ pub struct Token<'a> {
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum TokenKind<'a> {
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
     Comma,
     Dot,
     Minus,
     Plus,
-    Semicolon,
+    Semi,
     Slash,
     Star,
     Bang,
-    BangEqual,
-    Equal,
-    EqualEqual,
-    Greater,
-    GreaterEqual,
-    Less,
-    LessEqual,
+    BangEq,
+    Eq,
+    EqEq,
+    Gt,
+    GtEq,
+    Lt,
+    LtEq,
 
     // Literals
     Ident(&'a str),
     Str(&'a str),
-    Number(&'a str),
+    Num(&'a str),
 
     // Keywords
     And,
@@ -95,12 +95,12 @@ impl<'a> TokenKind<'a> {
         use self::TokenKind::*;
 
         match self {
-            LeftParen | RightParen | LeftBrace | RightBrace | Comma | Dot | Minus | Plus
-            | Semicolon | Slash | Star | Bang | Equal | Greater | Less => 1,
-            BangEqual | EqualEqual | GreaterEqual | LessEqual => 2,
+            LParen | RParen | LBrace | RBrace | Comma | Dot | Minus | Plus | Semi | Slash
+            | Star | Bang | Eq | Gt | Lt => 1,
+            BangEq | EqEq | GtEq | LtEq => 2,
             Ident(s) => s.len() as u64,
             Str(s) => s.len() as u64,
-            Number(s) => s.len() as u64,
+            Num(s) => s.len() as u64,
             If | Or => 2,
             And | Fun | For | Var | Nil => 3,
             This | Else | True => 4,
