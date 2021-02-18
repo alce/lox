@@ -16,6 +16,7 @@
 		6B6A483625DDE7B700CF3EB4 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A483525DDE7B700CF3EB4 /* fs.c */; };
 		6B6A483A25DDE90100CF3EB4 /* compiler.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A483925DDE90100CF3EB4 /* compiler.c */; };
 		6B6A483C25DDEA3300CF3EB4 /* clox in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6B6A47C625D391C700CF3EB4 /* clox */; };
+		6B6A484125DEED2C00CF3EB4 /* scanner.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A484025DEED2C00CF3EB4 /* scanner.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -49,6 +50,8 @@
 		6B6A483525DDE7B700CF3EB4 /* fs.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = fs.c; sourceTree = "<group>"; };
 		6B6A483825DDE90100CF3EB4 /* compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler.h; sourceTree = "<group>"; };
 		6B6A483925DDE90100CF3EB4 /* compiler.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = compiler.c; sourceTree = "<group>"; };
+		6B6A483F25DEED2C00CF3EB4 /* scanner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scanner.h; sourceTree = "<group>"; };
+		6B6A484025DEED2C00CF3EB4 /* scanner.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = scanner.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +70,8 @@
 			children = (
 				6B6A483825DDE90100CF3EB4 /* compiler.h */,
 				6B6A483925DDE90100CF3EB4 /* compiler.c */,
+				6B6A483F25DEED2C00CF3EB4 /* scanner.h */,
+				6B6A484025DEED2C00CF3EB4 /* scanner.c */,
 				6B6A483425DDE7B700CF3EB4 /* fs.h */,
 				6B6A483525DDE7B700CF3EB4 /* fs.c */,
 				6B6A483025DDD95200CF3EB4 /* vm.h */,
@@ -150,6 +155,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6B6A483625DDE7B700CF3EB4 /* fs.c in Sources */,
+				6B6A484125DEED2C00CF3EB4 /* scanner.c in Sources */,
 				6B6A482E25DDD31600CF3EB4 /* value.c in Sources */,
 				6B6A47CA25D391C700CF3EB4 /* main.c in Sources */,
 				6B6A47DA25D3976400CF3EB4 /* memory.c in Sources */,
