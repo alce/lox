@@ -45,7 +45,7 @@ impl<'a> Scanner<'a> {
                 '-' => self.emit(Minus),
                 '+' => self.emit(Plus),
                 '/' => {
-                    if self.if_next_is('/') {
+                    if self.next_is('/') {
                         while let Some(&(_, n)) = self.iter.peek() {
                             if n == '\n' {
                                 break;
@@ -103,7 +103,7 @@ impl<'a> Scanner<'a> {
     fn number(&mut self, start: usize) {
         self.consume_digits();
 
-        if self.if_next_is('.') {
+        if self.next_is('.') {
             self.iter.next();
             self.consume_digits();
         }
@@ -130,7 +130,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn peek_and_emit(&mut self, single: TokenKind<'a>, double: TokenKind<'a>) {
-        if self.if_next_is('=') {
+        if self.next_is('=') {
             self.iter.next();
             self.emit(double)
         } else {
@@ -147,7 +147,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn if_next_is(&mut self, maybe: char) -> bool {
+    fn next_is(&mut self, maybe: char) -> bool {
         if let Some(&(_, c)) = self.iter.peek() {
             if c == maybe {
                 return true;
