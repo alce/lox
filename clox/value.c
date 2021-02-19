@@ -4,9 +4,9 @@
 #include "value.h"
 
 void init_value_array(ValueArray* array) {
-    array->values = NULL;
     array->cap = 0;
     array->count = 0;
+    array->values = NULL;
 }
 
 void write_value_array(ValueArray* array, Value value) {

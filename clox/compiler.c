@@ -9,10 +9,10 @@
 #endif
 
 typedef struct {
-    Token prev;
     Token curr;
+    Token prev;
     bool had_error;
-    bool panick_mode;
+    bool panic_mode;
 } Parser;
 
 typedef enum {
@@ -46,17 +46,17 @@ static Chunk* current_chunk() {
 }
 
 static void error_at(Token* token, const char* message) {
-    if (parser.panick_mode) return;
-    parser.panick_mode = true;
+    if (parser.panic_mode) return;
+    parser.panic_mode = true;
     
-    fprintf(stderr, "[line %d] Error", token-> line);
+    fprintf(stderr, "[line %d] Error", token->line);
     
     if (token->type == TOKEN_EOF) {
         fprintf(stderr, " at end");
     } else if (token->type == TOKEN_ERROR) {
         //noop
     } else {
-        fprintf(stderr, " at '%.*s'", token->length, token-> start);
+        fprintf(stderr, " at '%.*s'", token->length, token->start);
     }
     
     fprintf(stderr, ": %s\n", message);
@@ -77,9 +77,8 @@ void advance() {
     for (;;) {
         parser.curr = scan_token();
         if (parser.curr.type != TOKEN_ERROR) break;
+        error_at_current(parser.curr.start);
     }
-    
-    error_at_current(parser.curr.start);
 }
 
 void consume(TokenType type, const char* message) {
@@ -128,17 +127,21 @@ static void end_compiler() {
 #endif
 }
 
-static void expression(void);
+// static void expression(void);
 //static void statement(void);
 //static void declaration(void);
 static ParseRule* get_rule(TokenType type);
 static void parse_precedence(Precedence presedence);
 
 
+static void expression() {
+    parse_precedence(PREC_ASSIGNMENT);
+}
+
 static void binary() {
     TokenType op_type = parser.prev.type;
-    
     ParseRule* rule = get_rule(op_type);
+    
     parse_precedence((Precedence)(rule->precedence + 1));
     
     switch (op_type) {
@@ -158,7 +161,7 @@ static void grouping() {
 
 static void unary() {
     TokenType op_type = parser.prev.type;
-    expression();
+    
     parse_precedence(PREC_UNARY);
     
     switch (op_type) {
@@ -220,7 +223,6 @@ static void parse_precedence(Precedence precedence) {
     advance();
     
     ParseFn prefix_rule = get_rule(parser.prev.type)->prefix;
-    
     if (prefix_rule == NULL) {
         error("Expect expression.");
         return;
@@ -239,21 +241,18 @@ static ParseRule* get_rule(TokenType type) {
     return &rules[type];
 }
 
-static void expression() {
-    parse_precedence(PREC_ASSIGNMENT);
-}
 
 bool compile(const char* source, Chunk* chunk) {
     init_scanner(source);
+    
     compiling_chunk = chunk;
-    
     parser.had_error = false;
-    parser.panick_mode = false;
-    
+    parser.panic_mode = false;
+
     advance();
     expression();
     consume(TOKEN_EOF, "Expect end of expression.");
-    
     end_compiler();
+
     return !parser.had_error;
 }

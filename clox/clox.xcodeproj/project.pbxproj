@@ -13,7 +13,6 @@
 		6B6A482A25DDD0AA00CF3EB4 /* debug.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A482925DDD0AA00CF3EB4 /* debug.c */; };
 		6B6A482E25DDD31600CF3EB4 /* value.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A482D25DDD31600CF3EB4 /* value.c */; };
 		6B6A483225DDD95200CF3EB4 /* vm.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A483125DDD95200CF3EB4 /* vm.c */; };
-		6B6A483625DDE7B700CF3EB4 /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A483525DDE7B700CF3EB4 /* fs.c */; };
 		6B6A483A25DDE90100CF3EB4 /* compiler.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A483925DDE90100CF3EB4 /* compiler.c */; };
 		6B6A483C25DDEA3300CF3EB4 /* clox in CopyFiles */ = {isa = PBXBuildFile; fileRef = 6B6A47C625D391C700CF3EB4 /* clox */; };
 		6B6A484125DEED2C00CF3EB4 /* scanner.c in Sources */ = {isa = PBXBuildFile; fileRef = 6B6A484025DEED2C00CF3EB4 /* scanner.c */; };
@@ -46,8 +45,6 @@
 		6B6A482D25DDD31600CF3EB4 /* value.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = value.c; sourceTree = "<group>"; };
 		6B6A483025DDD95200CF3EB4 /* vm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vm.h; sourceTree = "<group>"; };
 		6B6A483125DDD95200CF3EB4 /* vm.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = vm.c; sourceTree = "<group>"; };
-		6B6A483425DDE7B700CF3EB4 /* fs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = fs.h; sourceTree = "<group>"; };
-		6B6A483525DDE7B700CF3EB4 /* fs.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = fs.c; sourceTree = "<group>"; };
 		6B6A483825DDE90100CF3EB4 /* compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler.h; sourceTree = "<group>"; };
 		6B6A483925DDE90100CF3EB4 /* compiler.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = compiler.c; sourceTree = "<group>"; };
 		6B6A483F25DEED2C00CF3EB4 /* scanner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scanner.h; sourceTree = "<group>"; };
@@ -72,8 +69,6 @@
 				6B6A483925DDE90100CF3EB4 /* compiler.c */,
 				6B6A483F25DEED2C00CF3EB4 /* scanner.h */,
 				6B6A484025DEED2C00CF3EB4 /* scanner.c */,
-				6B6A483425DDE7B700CF3EB4 /* fs.h */,
-				6B6A483525DDE7B700CF3EB4 /* fs.c */,
 				6B6A483025DDD95200CF3EB4 /* vm.h */,
 				6B6A483125DDD95200CF3EB4 /* vm.c */,
 				6B6A482C25DDD31600CF3EB4 /* value.h */,
@@ -154,7 +149,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6B6A483625DDE7B700CF3EB4 /* fs.c in Sources */,
 				6B6A484125DEED2C00CF3EB4 /* scanner.c in Sources */,
 				6B6A482E25DDD31600CF3EB4 /* value.c in Sources */,
 				6B6A47CA25D391C700CF3EB4 /* main.c in Sources */,

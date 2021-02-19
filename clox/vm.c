@@ -7,11 +7,15 @@
 
 VM vm;
 
-void initVM(void) {
+static void reset_stack() {
     vm.stack_top = vm.stack;
 }
 
-void freeVM(void) {}
+void init_vm(void) {
+    reset_stack();
+}
+
+void free_vm(void) {}
 
 void push(Value value) {
     *vm.stack_top = value;
@@ -25,7 +29,9 @@ Value pop(void) {
 
 InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
+    
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+    
 #define BINARY_OP(op) \
     do { \
       double b = pop(); \
@@ -51,11 +57,13 @@ InterpretResult run() {
                 printf("\n");
                 return INTERPRET_OK;
             }
-            case OP_ADD: BINARY_OP(+); break;
-            case OP_SUBTRACT: BINARY_OP(-); break;
-            case OP_MULTIPLY: BINARY_OP(*); break;
-            case OP_DIVIDE: BINARY_OP(/); break;
-            case OP_NEGATE: push(-pop()); break;
+                
+            case OP_ADD:        BINARY_OP(+); break;
+            case OP_SUBTRACT:   BINARY_OP(-); break;
+            case OP_MULTIPLY:   BINARY_OP(*); break;
+            case OP_DIVIDE:     BINARY_OP(/); break;
+            case OP_NEGATE:     push(-pop()); break;
+                
             case OP_CONSTANT: {
                 Value constant = READ_CONSTANT();
                 push(constant);
@@ -81,12 +89,5 @@ InterpretResult interpret(const char* source) {
     vm.chunk = &chunk;
     vm.ip = vm.chunk->code;
     
-    InterpretResult result = run();
-    free_chunk(&chunk);
-    return result;
-    
+    return run();
 }
-
-
-
-

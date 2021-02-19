@@ -4,7 +4,6 @@
 
 #include "common.h"
 #include "vm.h"
-#include "fs.h"
 
 static void repl() {
     char line[1024];
@@ -20,6 +19,35 @@ static void repl() {
     }
 }
 
+char* read_file(const char* path) {
+    FILE* file = fopen(path, "rb");
+    
+    if (file == NULL) {
+        fprintf(stderr, "Failed to open file \"%s\".\n", path);
+        exit(74);
+    }
+    
+    fseek(file, 0L, SEEK_END);
+    size_t fileSize = ftell(file);
+    rewind(file);
+    
+    char* buffer = (char*)malloc(fileSize + 1);
+    if (buffer == NULL) {
+        fprintf(stderr, "OOM. Can't read \"%s\".\n", path);
+        exit(74);
+    }
+    
+    size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
+    buffer[bytesRead] = '\0';
+    if (bytesRead < fileSize) {
+        fprintf(stderr, "Failed to read file \"%s\".\n", path);
+        exit(74);
+    }
+    
+    fclose(file);
+    return buffer;
+}
+
 static void run_file(const char* path) {
     char* source = read_file(path);
     InterpretResult result = interpret(source);
@@ -30,7 +58,7 @@ static void run_file(const char* path) {
 }
 
 int main(int argc, const char * argv[]) {
-    initVM();
+    init_vm();
     
     if (argc == 1) {
         repl();
@@ -41,6 +69,7 @@ int main(int argc, const char * argv[]) {
         exit(64);
     }
     
-    freeVM();
+    free_vm();
+    
     return 0;
 }
