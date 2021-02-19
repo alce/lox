@@ -1,8 +1,4 @@
-#![allow(unused)]
-
 use std::fmt;
-
-pub(crate) type Result<T = ()> = std::result::Result<T, LoxError>;
 
 #[derive(Debug)]
 pub enum LoxError {

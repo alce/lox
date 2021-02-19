@@ -1,5 +1,6 @@
-use crate::scanner::ScanError;
 use std::str::FromStr;
+
+use crate::scanner::ScanError;
 
 #[derive(Debug)]
 pub struct Token<'a> {

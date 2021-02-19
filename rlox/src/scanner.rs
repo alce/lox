@@ -5,13 +5,17 @@ use crate::token::{Token, TokenKind};
 
 use TokenKind::*;
 
+pub fn tokenize(source: &str) -> Vec<Token> {
+    Scanner::new(source).scan()
+}
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ScanError {
     UnexpectedCharacter(char),
     UnterminatedString,
 }
 
-pub struct Scanner<'a> {
+struct Scanner<'a> {
     source: &'a str,
     iter: Peekable<CharIndices<'a>>,
     tokens: Vec<Token<'a>>,

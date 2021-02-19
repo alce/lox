@@ -1,6 +1,8 @@
 use std::io::{self, BufRead, Write};
 use std::process::exit;
 
+use rlox::LoxError;
+
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
 
@@ -13,7 +15,13 @@ fn main() {
 
 fn run_file(path: &str) {
     let source = std::fs::read_to_string(path).unwrap();
-    rlox::interpret(&source)
+
+    if let Err(e) = rlox::interpret(&source.trim()) {
+        match e {
+            LoxError::Compile(_) => exit(65),
+            LoxError::Runtime => exit(70),
+        }
+    }
 }
 
 fn repl() {
@@ -26,7 +34,7 @@ fn repl() {
 
     prompt();
     for line in stdin.lock().lines() {
-        rlox::interpret(&line.unwrap());
+        rlox::interpret(&line.unwrap()).unwrap();
         prompt();
     }
 }

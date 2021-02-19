@@ -1,11 +1,13 @@
-#![allow(unused)]
-
 use crate::chunk::{Chunk, OpCode, Value};
-use crate::error::Result;
+use crate::LoxError;
+
+use OpCode::*;
 
 const STACK_MAX: usize = 256;
 
-use OpCode::*;
+pub fn interpret(chunk: Chunk) -> Result<(), LoxError> {
+    Vm::new(chunk).run()
+}
 
 #[derive(Debug)]
 pub struct Vm {
@@ -25,10 +27,6 @@ impl Vm {
         }
     }
 
-    pub fn interpret(&mut self) -> Result {
-        self.run()
-    }
-
     pub fn push(&mut self, value: Value) {
         self.stack[self.stack_top] = value;
         self.stack_top += 1;
@@ -39,7 +37,7 @@ impl Vm {
         self.stack[self.stack_top]
     }
 
-    fn run(&mut self) -> Result {
+    fn run(&mut self) -> Result<(), LoxError> {
         loop {
             self.trace();
 

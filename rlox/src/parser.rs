@@ -1,18 +1,12 @@
-#![allow(unused)]
-
-use crate::chunk::Chunk;
-use crate::token::Token;
+use crate::token::{Token, TokenKind};
+use crate::{Chunk, LoxError};
 
 pub enum ParseError {
     EndOfStream,
     UnexpectedToken,
 }
 
-pub fn parse<'a>(tokens: &'a [Token<'a>], chunk: &mut Chunk) {
-    todo!()
-}
-
-struct Parser<'a> {
+pub(crate) struct Parser<'a> {
     tokens: &'a [Token<'a>],
 }
 
