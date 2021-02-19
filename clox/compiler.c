@@ -145,10 +145,16 @@ static void binary() {
     parse_precedence((Precedence)(rule->precedence + 1));
     
     switch (op_type) {
-        case TOKEN_PLUS: emit_byte(OP_ADD); break;
-        case TOKEN_MINUS: emit_byte(OP_SUBTRACT); break;
-        case TOKEN_STAR: emit_byte(OP_MULTIPLY); break;
-        case TOKEN_SLASH: emit_byte(OP_DIVIDE); break;
+        case TOKEN_BANG_EQ: emit_bytes(OP_EQUAL, OP_NOT); break;
+        case TOKEN_EQ_EQ:   emit_byte(OP_EQUAL); break;
+        case TOKEN_GT:      emit_byte(OP_GREATER); break;
+        case TOKEN_GT_EQ:   emit_bytes(OP_LESS, OP_NOT); break;
+        case TOKEN_LT:      emit_byte(OP_LESS); break;
+        case TOKEN_LT_EQ:   emit_bytes(OP_GREATER, OP_NOT); break;
+        case TOKEN_PLUS:    emit_byte(OP_ADD); break;
+        case TOKEN_MINUS:   emit_byte(OP_SUBTRACT); break;
+        case TOKEN_STAR:    emit_byte(OP_MULTIPLY); break;
+        case TOKEN_SLASH:   emit_byte(OP_DIVIDE); break;
         default:
             return;
     }
@@ -175,6 +181,7 @@ static void unary() {
     parse_precedence(PREC_UNARY);
     
     switch (op_type) {
+        case TOKEN_BANG: emit_byte(OP_NOT); break;
         case TOKEN_MINUS: emit_byte(OP_NEGATE); break;
         default:
             return;
@@ -198,14 +205,14 @@ ParseRule rules[] = {
     [TOKEN_SEMI]    = {NULL,     NULL,   PREC_NONE},
     [TOKEN_SLASH]   = {NULL,     binary, PREC_FACTOR},
     [TOKEN_STAR]    = {NULL,     binary, PREC_FACTOR},
-    [TOKEN_BANG]    = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_BANG_EQ] = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_BANG]    = {unary,    NULL,   PREC_NONE},
+    [TOKEN_BANG_EQ] = {NULL,     binary, PREC_EQUALITY},
     [TOKEN_EQ]      = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_EQ_EQ]   = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_GT]      = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_GT_EQ]   = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_LT]      = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_LT_EQ]   = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_EQ_EQ]   = {NULL,     binary, PREC_EQUALITY},
+    [TOKEN_GT]      = {NULL,     binary, PREC_COMPARISON},
+    [TOKEN_GT_EQ]   = {NULL,     binary, PREC_COMPARISON},
+    [TOKEN_LT]      = {NULL,     binary, PREC_COMPARISON},
+    [TOKEN_LT_EQ]   = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_IDENT]   = {NULL,     NULL,   PREC_NONE},
     [TOKEN_STR]     = {NULL,     NULL,   PREC_NONE},
     [TOKEN_NUM]     = {number,   NULL,   PREC_NONE},
