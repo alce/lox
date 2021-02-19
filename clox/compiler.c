@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "common.h"
 #include "compiler.h"
+#include "memory.h"
 #include "scanner.h"
 
 #ifdef DEBUG_PRINT_CODE
@@ -193,6 +195,11 @@ static void number() {
     emit_constant(NUMBER_VAL(val));
 }
 
+static void string() {
+    emit_constant(OBJ_VAL(copy_string(parser.prev.start + 1,
+                                      parser.prev.length - 2)));
+}
+
 ParseRule rules[] = {
     [TOKEN_LPAREN]  = {grouping, NULL,   PREC_NONE},
     [TOKEN_RPAREN]  = {NULL,     NULL,   PREC_NONE},
@@ -214,7 +221,7 @@ ParseRule rules[] = {
     [TOKEN_LT]      = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LT_EQ]   = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_IDENT]   = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_STR]     = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_STR]     = {string,   NULL,   PREC_NONE},
     [TOKEN_NUM]     = {number,   NULL,   PREC_NONE},
     [TOKEN_AND]     = {NULL,     NULL,   PREC_NONE},
     [TOKEN_CLASS]   = {NULL,     NULL,   PREC_NONE},
