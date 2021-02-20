@@ -25,7 +25,7 @@ test_rust: $(RLOX) $(TEST_RUNNER)
 
 test_c: $(CLOX) $(TEST_RUNNER)
 	@echo "Testing C VM..."
-	@$(TEST_RUNNER) chap21_global -i $(CLOX)
+	@$(TEST_RUNNER) chap22_local -i $(CLOX)
 
 $(DLOX): $(DART_SRC)
 	@mkdir -p bin

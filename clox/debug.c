@@ -17,6 +17,13 @@ static int simple(const char* name, int offset) {
     return offset + 1;
 }
 
+static int byte(const char* name, Chunk* chunk, int offset) {
+    uint8_t slot = chunk->code[offset + 1];
+    printf("%-16s %4d\n", name, slot);
+    
+    return offset + 2;
+}
+
 static int constant(const char* name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     
@@ -45,6 +52,8 @@ int disassemble_instruction(Chunk* chunk, int offset) {
         case OP_TRUE: return simple("OP_TRUE", offset);
         case OP_FALSE: return simple("OP_FALSE", offset);
         case OP_POP: return simple("OP_POP", offset);
+        case OP_GET_LOCAL: return byte("OP_GET_LOCAL", chunk, offset);
+        case OP_SET_LOCAL: return byte("OP_SET_LOCAL", chunk, offset);
         case OP_GET_GLOBAL: return constant("OP_GET_GLOBAL", chunk, offset);
         case OP_DEFINE_GLOBAL:
             return constant("OP_DEFINE_GLOBAL", chunk, offset);
