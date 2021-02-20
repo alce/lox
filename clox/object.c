@@ -7,12 +7,11 @@
 #include "vm.h"
 
 #define ALLOCATE_OBJ(type, object_type) \
-(type*) allocate_object(sizeof(type), object_type)
+(type*)allocate_object(sizeof(type), object_type)
 
 static Obj* allocate_object(size_t size, ObjType type) {
     Obj* object = (Obj*) reallocate(NULL, 0, size);
     object->type = type;
-    
     object->next = vm.objects;
     vm.objects = object;
     return object;
@@ -42,7 +41,9 @@ static uint32_t hash_string(const char* key, int length) {
 
 ObjString* copy_string(const char* chars, int length) {
     uint32_t hash = hash_string(chars, length);
+    
     ObjString* interned = table_find_string(&vm.strings, chars, length, hash);
+    
     if (interned != NULL) return interned;
     
     char* heap_chars = ALLOCATE(char, length + 1);

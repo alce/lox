@@ -92,6 +92,16 @@ void consume(TokenType type, const char* message) {
     error_at_current(message);
 }
 
+static bool check(TokenType type) {
+    return parser.curr.type == type;
+}
+
+static bool match(TokenType type) {
+    if (!check(type)) return false;
+    advance();
+    return true;
+}
+
 static void emit_byte(uint8_t byte) {
     write_chunk(current_chunk(), byte, parser.prev.line);
 }
@@ -129,15 +139,86 @@ static void end_compiler() {
 #endif
 }
 
-// static void expression(void);
-//static void statement(void);
-//static void declaration(void);
+static void expression(void);
+static void statement(void);
+static void declaration(void);
 static ParseRule* get_rule(TokenType type);
 static void parse_precedence(Precedence presedence);
+static uint8_t parse_variable(const char*);
+static void define_variable(uint8_t);
+static uint8_t identifier_constant(Token*);
 
 
 static void expression() {
     parse_precedence(PREC_ASSIGNMENT);
+}
+
+static void var_declaration() {
+    uint8_t global = parse_variable("Expect variable name.");
+    
+    if (match(TOKEN_EQ)) {
+        expression();
+    } else {
+        emit_byte(OP_NIL);
+    }
+    
+    consume(TOKEN_SEMI, "Expect ';' after variable declaration.");
+    
+    define_variable(global);
+}
+
+static void expression_statement() {
+    expression();
+    consume(TOKEN_SEMI, "Expect ';' after expression.");
+    emit_byte(OP_POP);
+}
+
+static void print_statement() {
+    expression();
+    consume(TOKEN_SEMI, "Expect ';' after value.");
+    emit_byte(OP_PRINT);
+}
+
+static void synchronize() {
+    parser.panic_mode = false;
+    
+    while (parser.curr.type != TOKEN_EOF) {
+        if (parser.prev.type == TOKEN_SEMI) return;
+        
+        switch(parser.curr.type) {
+            case TOKEN_CLASS:
+            case TOKEN_FUN:
+            case TOKEN_VAR:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+            case TOKEN_RETURN:
+                return;
+            default:
+                ;
+        }
+        
+        advance();
+    }
+}
+
+static void declaration() {
+    if (match(TOKEN_VAR)) {
+        var_declaration();
+    } else {
+        statement();
+    }
+    
+    if (parser.panic_mode) synchronize();
+}
+
+static void statement() {
+    if (match(TOKEN_PRINT)) {
+        print_statement();
+    } else {
+        expression_statement();
+    }
 }
 
 static void binary() {
@@ -200,6 +281,15 @@ static void string() {
                                       parser.prev.length - 2)));
 }
 
+static void named_variable(Token name) {
+    uint8_t arg = identifier_constant(&name);
+    emit_bytes(OP_GET_GLOBAL, arg);
+}
+
+static void variable() {
+    named_variable(parser.prev);
+}
+
 ParseRule rules[] = {
     [TOKEN_LPAREN]  = {grouping, NULL,   PREC_NONE},
     [TOKEN_RPAREN]  = {NULL,     NULL,   PREC_NONE},
@@ -220,7 +310,7 @@ ParseRule rules[] = {
     [TOKEN_GT_EQ]   = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LT]      = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LT_EQ]   = {NULL,     binary, PREC_COMPARISON},
-    [TOKEN_IDENT]   = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_IDENT]   = {variable, NULL,   PREC_NONE},
     [TOKEN_STR]     = {string,   NULL,   PREC_NONE},
     [TOKEN_NUM]     = {number,   NULL,   PREC_NONE},
     [TOKEN_AND]     = {NULL,     NULL,   PREC_NONE},
@@ -261,6 +351,20 @@ static void parse_precedence(Precedence precedence) {
     }
 }
 
+
+static uint8_t identifier_constant(Token* name) {
+    return make_constant(OBJ_VAL(copy_string(name->start, name->length)));
+}
+
+static uint8_t parse_variable(const char* error_message) {
+    consume(TOKEN_IDENT, error_message);
+    return identifier_constant(&parser.prev);
+}
+
+static void define_variable(uint8_t global) {
+    emit_bytes(OP_DEFINE_GLOBAL, global);
+}
+
 static ParseRule* get_rule(TokenType type) {
     return &rules[type];
 }
@@ -272,11 +376,13 @@ bool compile(const char* source, Chunk* chunk) {
     compiling_chunk = chunk;
     parser.had_error = false;
     parser.panic_mode = false;
-
+    
     advance();
-    expression();
-    consume(TOKEN_EOF, "Expect end of expression.");
+    
+    while (!match(TOKEN_EOF)) {
+        declaration();
+    }
+    
     end_compiler();
-
     return !parser.had_error;
 }

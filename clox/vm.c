@@ -33,6 +33,7 @@ void init_vm(void) {
     reset_stack();
     vm.objects = NULL;
     init_table(&vm.strings);
+    init_table(&vm.globals);
 }
 
 void free_vm(void) {
@@ -74,19 +75,19 @@ static void concatenate() {
 
 InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
-    
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+#define READ_STRING() AS_STRING(READ_CONSTANT())
     
 #define BINARY_OP(value_type, op) \
-do { \
-if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
-runtime_error("Operands must be numbers."); \
-return INTERPRET_RUNTIME_ERROR; \
-} \
-double b = AS_NUMBER(pop()); \
-double a = AS_NUMBER(pop()); \
-push(value_type(a op b)); \
-} while (false)
+    do { \
+        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+            runtime_error("Operands must be numbers."); \
+            return INTERPRET_RUNTIME_ERROR; \
+        } \
+        double b = AS_NUMBER(pop()); \
+        double a = AS_NUMBER(pop()); \
+        push(value_type(a op b)); \
+    } while (false)
     
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
@@ -101,19 +102,39 @@ push(value_type(a op b)); \
 #endif
         uint8_t instruction;
         switch (instruction = READ_BYTE()) {
-            case OP_RETURN: {
-                print_value(pop());
-                printf("\n");
-                return INTERPRET_OK;
-            }
             case OP_CONSTANT: {
                 Value constant = READ_CONSTANT();
                 push(constant);
                 break;
             }
+            case OP_PRINT: {
+                Value val = pop();
+                print_value(val);
+                printf("\n");
+                break;
+            }
             case OP_NIL: push(NIL_VAL); break;
             case OP_TRUE: push(BOOL_VAL(true)); break;
             case OP_FALSE: push(BOOL_VAL(false)); break;
+            case OP_POP: pop(); break;
+                
+            case OP_GET_GLOBAL: {
+                ObjString* name = READ_STRING();
+                Value value;
+                if (!table_get(&vm.globals, name, &value)) {
+                    runtime_error("Undefined variable '%s'.", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(value);
+                break;
+            }
+                
+            case OP_DEFINE_GLOBAL: {
+                ObjString* name = READ_STRING();
+                table_set(&vm.globals, name, peek(0));
+                pop();
+                break;
+            }
                 
             case OP_EQUAL: {
                 Value b = pop();
@@ -144,6 +165,7 @@ push(value_type(a op b)); \
             case OP_NOT:
                 push(BOOL_VAL(is_falsey(pop())));
                 break;
+                
             case OP_NEGATE:
                 if (!IS_NUMBER(peek(0))) {
                     runtime_error("Operand must be a number.");
@@ -157,6 +179,7 @@ push(value_type(a op b)); \
 #undef READ_BYTE
 #undef READ_CONSTANT
 #undef BINARY_OP
+#undef READ_STRING
 }
 
 InterpretResult interpret(const char* source) {

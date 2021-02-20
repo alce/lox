@@ -60,6 +60,7 @@ static void adjust_capacity(Table* table, int cap) {
     
     // re-build the table
     table->count = 0;
+    
     for (int i = 0; i < table->cap; i++) {
         Entry* entry = &table->entries[i];
         if (entry->key == NULL) continue;
@@ -71,9 +72,8 @@ static void adjust_capacity(Table* table, int cap) {
     }
     
     FREE_ARRAY(Entry, table->entries, table->cap);
-    
     table->entries = entries;
-    table->count = cap;
+    table->cap = cap;
 }
 
 bool table_set(Table* table, ObjString* key, Value value) {
@@ -86,9 +86,9 @@ bool table_set(Table* table, ObjString* key, Value value) {
     
     bool is_new = entry->key == NULL;
     if (is_new && IS_NIL(entry->value)) table->count++;
-    
     entry->key = key;
     entry->value = value;
+    
     return is_new;
 }
 
@@ -114,25 +114,21 @@ void table_add_all(Table* from, Table* to) {
     }
 }
 
-ObjString* table_find_string(Table* table, const char* chars,
-                             int length, uint32_t hash) {
+ObjString* table_find_string(Table* table, const char* chars, int length, uint32_t hash) {
     if (table->count == 0) return NULL;
-    uint32_t idx = hash % table->cap;
+    uint32_t index = hash % table->cap;
     
     for (;;) {
-        Entry* entry = &table->entries[idx];
+        Entry* entry = &table->entries[index];
         
         if (entry->key == NULL) {
             if (IS_NIL(entry->value)) return NULL;
-        } else if (entry->key->length == length
-                   && entry->key->hash == hash
-                   && memcmp(entry->key->chars, chars, length) == 0) {
+        } else if (entry->key->length == length &&
+                   entry->key->hash == hash &&
+                   memcmp(entry->key->chars, chars, length) == 0) {
             return entry->key;
         }
         
-        idx = (idx + 1) % table->cap;
+        index = (index + 1) % table->cap;
     }
 }
-
-
-
