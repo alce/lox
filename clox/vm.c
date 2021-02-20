@@ -107,17 +107,10 @@ InterpretResult run() {
                 push(constant);
                 break;
             }
-            case OP_PRINT: {
-                Value val = pop();
-                print_value(val);
-                printf("\n");
-                break;
-            }
             case OP_NIL: push(NIL_VAL); break;
             case OP_TRUE: push(BOOL_VAL(true)); break;
             case OP_FALSE: push(BOOL_VAL(false)); break;
             case OP_POP: pop(); break;
-                
             case OP_GET_GLOBAL: {
                 ObjString* name = READ_STRING();
                 Value value;
@@ -128,24 +121,29 @@ InterpretResult run() {
                 push(value);
                 break;
             }
-                
             case OP_DEFINE_GLOBAL: {
                 ObjString* name = READ_STRING();
                 table_set(&vm.globals, name, peek(0));
                 pop();
                 break;
             }
-                
+            case OP_SET_GLOBAL: {
+                ObjString* name = READ_STRING();
+                if (table_set(&vm.globals, name, peek(0))) {
+                    table_delete(&vm.globals, name);
+                    runtime_error("Undefined variable '%s'.", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
             case OP_EQUAL: {
                 Value b = pop();
                 Value a = pop();
                 push(BOOL_VAL(values_equal(a, b)));
                 break;
             }
-                
             case OP_GREATER:   BINARY_OP(BOOL_VAL, >); break;
             case OP_LESS:      BINARY_OP(BOOL_VAL, <); break;
-                
             case OP_ADD:       {
                 if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
                     concatenate();
@@ -157,15 +155,14 @@ InterpretResult run() {
                     runtime_error("Operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
+                break;
             }
             case OP_SUBTRACT:   BINARY_OP(NUMBER_VAL, -); break;
             case OP_MULTIPLY:   BINARY_OP(NUMBER_VAL, *); break;
             case OP_DIVIDE:     BINARY_OP(NUMBER_VAL, /); break;
-                
             case OP_NOT:
                 push(BOOL_VAL(is_falsey(pop())));
                 break;
-                
             case OP_NEGATE:
                 if (!IS_NUMBER(peek(0))) {
                     runtime_error("Operand must be a number.");
@@ -173,9 +170,15 @@ InterpretResult run() {
                 }
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
                 break;
+            case OP_PRINT:
+                print_value(pop());
+                printf("\n");
+                break;
+            case OP_RETURN:
+                return INTERPRET_OK;
         }
     }
-    
+
 #undef READ_BYTE
 #undef READ_CONSTANT
 #undef BINARY_OP
