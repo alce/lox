@@ -21,7 +21,7 @@ test_dart: $(DLOX) $(TEST_RUNNER)
 
 test_rust: $(RLOX) $(TEST_RUNNER)
 	@echo "Testing Rust VM..."
-	@$(TEST_RUNNER) chap17_compiling -i $(RLOX)
+	@$(TEST_RUNNER) chap04_scanning -i $(RLOX)
 
 test_c: $(CLOX) $(TEST_RUNNER)
 	@echo "Testing C VM..."

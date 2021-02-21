@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::chunk::{OpCode, Value};
 use crate::parser::Parser;
 use crate::token::{Token, TokenKind};

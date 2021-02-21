@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::chunk::{Chunk, OpCode, Value};
 use crate::LoxError;
 

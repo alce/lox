@@ -1,179 +1,168 @@
-use std::iter::Peekable;
-use std::str::CharIndices;
-
 use crate::token::{Token, TokenKind};
-
+use std::str::{Chars, FromStr};
 use TokenKind::*;
 
-pub fn tokenize(source: &str) -> Vec<Token> {
-    Scanner::new(source).scan()
-}
-
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq)]
 pub enum ScanError {
-    UnexpectedCharacter(char),
+    UnexpectedChar,
     UnterminatedString,
 }
 
+pub fn tokenize(mut src: &str) -> impl Iterator<Item = Token<'_>> {
+    let mut start_line = 1;
+
+    std::iter::from_fn(move || {
+        if src.is_empty() {
+            return None;
+        }
+        let (token, consumed) = Scanner::new(src, start_line).scan();
+        start_line = token.line;
+        src = &src[consumed..];
+
+        Some(token)
+    })
+}
+
 struct Scanner<'a> {
-    source: &'a str,
-    iter: Peekable<CharIndices<'a>>,
-    tokens: Vec<Token<'a>>,
+    src: &'a str,
+    chars: Chars<'a>,
     line: u64,
-    col: u64,
 }
 
 impl<'a> Scanner<'a> {
-    pub fn new(source: &'a str) -> Self {
+    fn new(src: &'a str, line: u64) -> Scanner<'a> {
         Scanner {
-            source,
-            iter: source.char_indices().peekable(),
-            tokens: Vec::new(),
-            line: 1,
-            col: 1,
+            src,
+            chars: src.chars(),
+            line,
         }
+    }
+
+    fn scan(&mut self) -> (Token<'a>, usize) {
+        let c = self.advance().unwrap();
+
+        let kind = match c {
+            c if c.is_ascii_whitespace() => {
+                self.advance_while(|c| c.is_ascii_whitespace());
+                WHITESPACE
+            }
+            '/' => match self.peek() {
+                Some('/') => {
+                    self.advance_while(|c| c != '\n');
+                    COMMENT
+                }
+                _ => SLASH,
+            },
+            c if is_ident_start(c) => self.identifier(),
+            '0'..='9' => self.number(),
+            '(' => LEFT_PAREN,
+            ')' => RIGHT_PAREN,
+            '{' => LEFT_BRACE,
+            '}' => RIGHT_BRACE,
+            ',' => COMMA,
+            ';' => SEMICOLON,
+            '.' => DOT,
+            '-' => MINUS,
+            '+' => PLUS,
+            '*' => STAR,
+            '!' => self.maybe_double(BANG, BANG_EQUAL),
+            '=' => self.maybe_double(EQUAL, EQUAL_EQUAL),
+            '>' => self.maybe_double(GREATER, GREATER_EQUAL),
+            '<' => self.maybe_double(LESS, LESS_EQUAL),
+            '"' => self.string(),
+            _ => ERROR(ScanError::UnexpectedChar),
+        };
+
+        (Token::new(kind, self.line), self.consumed())
+    }
+
+    fn identifier(&mut self) -> TokenKind<'a> {
+        self.advance_while(|c| c.is_alphanumeric() || c == '_');
+        let src = &self.src[..self.consumed()];
+        TokenKind::from_str(src).unwrap_or(IDENTIFIER(src))
+    }
+
+    fn number(&mut self) -> TokenKind<'a> {
+        self.advance_while(is_number);
+
+        if let (Some('.'), Some(c)) = (self.peek(), self.peek_next()) {
+            if is_number(c) {
+                self.advance();
+                self.advance_while(is_number)
+            }
+        }
+
+        let src = &self.src[..self.consumed()];
+        NUMBER(f64::from_str(src).unwrap())
+    }
+
+    fn string(&mut self) -> TokenKind<'a> {
+        while let Some(c) = self.advance() {
+            if c == '"' {
+                return STRING(&self.src[..self.consumed()]);
+            }
+        }
+
+        ERROR(ScanError::UnterminatedString)
+    }
+
+    fn maybe_double(&mut self, single: TokenKind<'a>, double: TokenKind<'a>) -> TokenKind<'a> {
+        if let Some('=') = self.peek() {
+            self.advance();
+            return double;
+        }
+
+        single
+    }
+
+    fn advance(&mut self) -> Option<char> {
+        self.chars.next().map(|c| {
+            if c == '\n' {
+                self.line += 1;
+            };
+            c
+        })
+    }
+
+    fn advance_while(&mut self, mut f: impl FnMut(char) -> bool) {
+        while let Some(c) = self.peek() {
+            if !f(c) {
+                break;
+            }
+            self.advance();
+        }
+    }
+
+    fn peek(&self) -> Option<char> {
+        self.chars.clone().next()
+    }
+
+    fn peek_next(&self) -> Option<char> {
+        self.chars.clone().nth(1)
+    }
+
+    fn consumed(&self) -> usize {
+        self.src.len() - self.chars.as_str().len()
     }
 }
 
-impl<'a> Scanner<'a> {
-    pub fn scan(mut self) -> Vec<Token<'a>> {
-        while let Some((i, cr)) = self.iter.next() {
-            match cr {
-                '(' => self.emit(LParen),
-                ')' => self.emit(RParen),
-                '{' => self.emit(LBrace),
-                '}' => self.emit(RBrace),
-                ';' => self.emit(Semi),
-                ',' => self.emit(Comma),
-                '.' => self.emit(Dot),
-                '-' => self.emit(Minus),
-                '+' => self.emit(Plus),
-                '/' => {
-                    if self.next_is('/') {
-                        while let Some(&(_, n)) = self.iter.peek() {
-                            if n == '\n' {
-                                break;
-                            }
-                            self.iter.next();
-                        }
-                        continue;
-                    }
-                    self.emit(Slash)
-                }
-                '*' => self.emit(Star),
-                '!' => self.peek_and_emit(Bang, BangEq),
-                '=' => self.peek_and_emit(Eq, EqEq),
-                '<' => self.peek_and_emit(Lt, LtEq),
-                '>' => self.peek_and_emit(Gt, GtEq),
-                '"' => self.string(i),
-                '\n' => {
-                    self.line += 1;
-                    self.col = 1;
-                }
-                ' ' | '\r' => self.col += 1,
-                '\t' => self.col += 4, // 4, 8,????
-                c if c.is_digit(10) => self.number(i),
-                c if c.is_alphabetic() => self.identifier(i),
-                _ => self.emit(Error(ScanError::UnexpectedCharacter(cr))),
-            }
-        }
+fn is_ident_start(c: char) -> bool {
+    matches!(c, 'a'..='z' | 'A'..='Z' | '_')
+}
 
-        self.tokens.push(Token::new(EOF, self.line, self.col));
-        self.tokens
-    }
-
-    fn string(&mut self, start: usize) {
-        while let Some((_, c)) = self.iter.peek() {
-            match *c {
-                '"' => break,
-                '\n' => {
-                    self.line += 1;
-                    self.col = 1;
-                }
-                _ => {}
-            }
-            self.iter.next();
-        }
-
-        match self.iter.peek() {
-            Some(&(i, _)) => {
-                self.emit(Str(&self.source[start + 1..i]));
-                self.iter.next();
-            }
-            None => self.emit(Error(ScanError::UnterminatedString)),
-        }
-    }
-
-    fn number(&mut self, start: usize) {
-        self.consume_digits();
-
-        if self.next_is('.') {
-            self.iter.next();
-            self.consume_digits();
-        }
-
-        let src = &self.source[start..self.end_position()];
-        self.emit(Num(src));
-    }
-
-    fn identifier(&mut self, start: usize) {
-        while let Some((_, c)) = self.iter.peek() {
-            if !c.is_alphanumeric() {
-                break;
-            }
-            self.iter.next();
-        }
-
-        let src = &self.source[start..self.end_position()];
-        self.emit(src.parse().unwrap_or(Ident(src)))
-    }
-
-    fn emit(&mut self, kind: TokenKind<'a>) {
-        self.col += kind.size();
-        self.tokens.push(Token::new(kind, self.line, self.col))
-    }
-
-    fn peek_and_emit(&mut self, single: TokenKind<'a>, double: TokenKind<'a>) {
-        if self.next_is('=') {
-            self.iter.next();
-            self.emit(double)
-        } else {
-            self.emit(single)
-        }
-    }
-
-    fn consume_digits(&mut self) {
-        while let Some((_, c)) = self.iter.peek() {
-            if !c.is_digit(10) {
-                break;
-            }
-            self.iter.next();
-        }
-    }
-
-    fn next_is(&mut self, maybe: char) -> bool {
-        if let Some(&(_, c)) = self.iter.peek() {
-            if c == maybe {
-                return true;
-            }
-        }
-        false
-    }
-
-    fn end_position(&mut self) -> usize {
-        match self.iter.peek() {
-            Some(&(idx, _)) => idx,
-            None => self.source.len(),
-        }
-    }
+fn is_number(c: char) -> bool {
+    matches!(c, '0'..='9')
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn tokenize(source: &str) -> Vec<TokenKind<'_>> {
-        Scanner::new(source).scan().iter().map(|t| t.kind).collect()
+    fn tokenize(src: &str) -> Vec<TokenKind<'_>> {
+        super::tokenize(src)
+            .filter(|t| !t.is_whitespace())
+            .map(|t| t.kind)
+            .collect()
     }
 
     #[test]
@@ -181,18 +170,17 @@ mod tests {
         let actual = tokenize("-  (2 + 2) * 8 / 2.2;");
 
         let expected = [
-            Minus,
-            LParen,
-            Num("2"),
-            Plus,
-            Num("2"),
-            RParen,
-            Star,
-            Num("8"),
-            Slash,
-            Num("2.2"),
-            Semi,
-            EOF,
+            MINUS,
+            LEFT_PAREN,
+            NUMBER(2.0),
+            PLUS,
+            NUMBER(2.0),
+            RIGHT_PAREN,
+            STAR,
+            NUMBER(8.0),
+            SLASH,
+            NUMBER(2.2),
+            SEMICOLON,
         ];
 
         assert_eq!(actual, expected);
@@ -208,11 +196,11 @@ mod tests {
         );
 
         let expected = [
-            Str("lox"),
-            Str("hello..."),
-            Error(ScanError::UnterminatedString),
-            EOF,
+            STRING("\"lox\""),
+            STRING("\"hello...\""),
+            ERROR(ScanError::UnterminatedString),
         ];
+
         assert_eq!(actual, expected);
     }
 
@@ -226,21 +214,20 @@ mod tests {
         );
 
         let expected = [
-            Num("3"),
-            And,
-            Var,
-            Ident("foo"),
-            Fun,
-            Else,
-            Num("4"),
-            Super,
-            Class,
-            Or,
-            Nil,
-            While,
-            Print,
-            Ident("whale"),
-            EOF,
+            NUMBER(3.0),
+            AND,
+            VAR,
+            IDENTIFIER("foo"),
+            FUN,
+            ELSE,
+            NUMBER(4.0),
+            SUPER,
+            CLASS,
+            OR,
+            NIL,
+            WHILE,
+            PRINT,
+            IDENTIFIER("whale"),
         ];
 
         assert_eq!(actual, expected)
@@ -249,9 +236,25 @@ mod tests {
     #[test]
     fn test_no_tokens() {
         let actual = tokenize(" ");
-        assert_eq!(actual, [EOF]);
+        assert_eq!(actual, []);
 
         let actual = tokenize("// nope");
-        assert_eq!(actual, [EOF]);
+        assert_eq!(actual, []);
+    }
+
+    #[test]
+    fn line_numbers() {
+        let src = r#"
+            foo
+            22.33
+            bar
+        "#;
+
+        let actual = super::tokenize(src)
+            .filter(|t| !t.is_whitespace())
+            .map(|t| t.line)
+            .collect::<Vec<_>>();
+
+        assert_eq!(actual, [2, 3, 4]);
     }
 }

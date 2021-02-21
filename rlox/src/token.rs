@@ -1,66 +1,86 @@
+use crate::scanner::ScanError;
+use std::fmt;
 use std::str::FromStr;
 
-use crate::scanner::ScanError;
-
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Token<'a> {
     pub kind: TokenKind<'a>,
     pub line: u64,
-    pub col: u64,
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[allow(bad_style)]
+#[derive(Debug, PartialEq)]
 pub enum TokenKind<'a> {
-    LParen,
-    RParen,
-    LBrace,
-    RBrace,
-    Comma,
-    Dot,
-    Minus,
-    Plus,
-    Semi,
-    Slash,
-    Star,
-    Bang,
-    BangEq,
-    Eq,
-    EqEq,
-    Gt,
-    GtEq,
-    Lt,
-    LtEq,
+    // Single-character tokens.
+    LEFT_PAREN,
+    RIGHT_PAREN,
+    LEFT_BRACE,
+    RIGHT_BRACE,
+    COMMA,
+    DOT,
+    MINUS,
+    PLUS,
+    SEMICOLON,
+    SLASH,
+    STAR,
 
-    // Literals
-    Ident(&'a str),
-    Str(&'a str),
-    Num(&'a str),
+    // One or two character tokens.
+    BANG,
+    BANG_EQUAL,
+    EQUAL,
+    EQUAL_EQUAL,
+    GREATER,
+    GREATER_EQUAL,
+    LESS,
+    LESS_EQUAL,
 
-    // Keywords
-    And,
-    Class,
-    Else,
-    False,
-    Fun,
-    For,
-    If,
-    Nil,
-    Or,
-    Print,
-    Return,
-    Super,
-    This,
-    True,
-    Var,
-    While,
+    // Literals.
+    IDENTIFIER(&'a str),
+    STRING(&'a str),
+    NUMBER(f64),
 
-    Error(ScanError),
-    EOF,
+    // Keywords.
+    AND,
+    CLASS,
+    ELSE,
+    FALSE,
+    FUN,
+    FOR,
+    IF,
+    NIL,
+    OR,
+    PRINT,
+    RETURN,
+    SUPER,
+    THIS,
+    TRUE,
+    VAR,
+    WHILE,
+
+    WHITESPACE,
+    COMMENT,
+
+    ERROR(ScanError),
 }
 
 impl<'a> Token<'a> {
-    pub fn new(kind: TokenKind<'a>, line: u64, col: u64) -> Self {
-        Token { kind, line, col }
+    pub fn new(kind: TokenKind, line: u64) -> Token<'_> {
+        Token { kind, line }
+    }
+
+    pub fn is_whitespace(&self) -> bool {
+        matches!(self.kind, TokenKind::COMMENT | TokenKind::WHITESPACE)
+    }
+}
+
+impl fmt::Display for Token<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            TokenKind::STRING(s) => write!(f, "STRING {} {}", s, s),
+            TokenKind::NUMBER(s) => write!(f, "NUMBER {} {:?}", s, s),
+            TokenKind::IDENTIFIER(s) => write!(f, "IDENTIFIER {} null", s),
+            _ => write!(f, "{:?} {} null", self.kind, self.kind),
+        }
     }
 }
 
@@ -69,45 +89,72 @@ impl<'a> FromStr for TokenKind<'a> {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use TokenKind::*;
+
         match s {
-            "and" => Ok(And),
-            "class" => Ok(Class),
-            "else" => Ok(Else),
-            "false" => Ok(False),
-            "for" => Ok(For),
-            "fun" => Ok(Fun),
-            "if" => Ok(If),
-            "nil" => Ok(Nil),
-            "or" => Ok(Or),
-            "print" => Ok(Print),
-            "return" => Ok(Return),
-            "super" => Ok(Super),
-            "this" => Ok(This),
-            "true" => Ok(True),
-            "var" => Ok(Var),
-            "while" => Ok(While),
+            "and" => Ok(AND),
+            "class" => Ok(CLASS),
+            "else" => Ok(ELSE),
+            "false" => Ok(FALSE),
+            "for" => Ok(FOR),
+            "fun" => Ok(FUN),
+            "if" => Ok(IF),
+            "nil" => Ok(NIL),
+            "or" => Ok(OR),
+            "print" => Ok(PRINT),
+            "return" => Ok(RETURN),
+            "super" => Ok(SUPER),
+            "this" => Ok(THIS),
+            "true" => Ok(TRUE),
+            "var" => Ok(VAR),
+            "while" => Ok(WHILE),
             _ => Err(()),
         }
     }
 }
 
-impl<'a> TokenKind<'a> {
-    pub fn size(&self) -> u64 {
-        use self::TokenKind::*;
+impl fmt::Display for TokenKind<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use TokenKind::*;
 
-        match self {
-            LParen | RParen | LBrace | RBrace | Comma | Dot | Minus | Plus | Semi | Slash
-            | Star | Bang | Eq | Gt | Lt => 1,
-            BangEq | EqEq | GtEq | LtEq => 2,
-            Ident(s) => s.len() as u64,
-            Str(s) => s.len() as u64,
-            Num(s) => s.len() as u64,
-            If | Or => 2,
-            And | Fun | For | Var | Nil => 3,
-            This | Else | True => 4,
-            Super | While | Print | False | Class => 5,
-            Return => 6,
-            EOF | Error(_) => 0,
-        }
+        let s = match self {
+            LEFT_PAREN => "(",
+            RIGHT_PAREN => ")",
+            LEFT_BRACE => "{",
+            RIGHT_BRACE => "}",
+            SEMICOLON => ";",
+            COMMA => ",",
+            DOT => ".",
+            MINUS => "-",
+            PLUS => "+",
+            SLASH => "/",
+            STAR => "*",
+            BANG => "!=",
+            BANG_EQUAL => "!=",
+            EQUAL => "=",
+            EQUAL_EQUAL => "==",
+            GREATER => ">",
+            GREATER_EQUAL => ">=",
+            LESS => "<",
+            LESS_EQUAL => "<=",
+            AND => "and",
+            CLASS => "class",
+            ELSE => "else",
+            FALSE => "false",
+            FUN => "fun",
+            FOR => "for",
+            IF => "if",
+            NIL => "nil",
+            OR => "or",
+            PRINT => "print",
+            RETURN => "return",
+            SUPER => "super",
+            THIS => "this",
+            TRUE => "true",
+            VAR => "var",
+            WHILE => "while",
+            _ => "",
+        };
+
+        write!(f, "{}", s)
     }
 }

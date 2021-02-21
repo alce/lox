@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::token::{Token, TokenKind};
 use crate::{Chunk, LoxError};
 

@@ -14,9 +14,9 @@ fn main() {
 }
 
 fn run_file(path: &str) {
-    let source = std::fs::read_to_string(path).unwrap();
+    let src = std::fs::read_to_string(path).unwrap();
 
-    if let Err(e) = rlox::interpret(&source.trim()) {
+    if let Err(e) = rlox::interpret(src.trim()) {
         match e {
             LoxError::Compile(_) => exit(65),
             LoxError::Runtime => exit(70),
@@ -25,15 +25,13 @@ fn run_file(path: &str) {
 }
 
 fn repl() {
-    let stdin = io::stdin();
-
     let prompt = || {
         print!("> ");
         io::stdout().flush().unwrap();
     };
 
     prompt();
-    for line in stdin.lock().lines() {
+    for line in io::stdin().lock().lines() {
         rlox::interpret(&line.unwrap()).unwrap();
         prompt();
     }
