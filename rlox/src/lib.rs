@@ -2,6 +2,7 @@ pub use error::LoxError;
 
 use crate::chunk::Chunk;
 
+mod ast;
 mod chunk;
 mod compiler;
 mod error;
