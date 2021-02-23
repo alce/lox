@@ -20,12 +20,7 @@ pub struct Vm {
 
 impl Vm {
     pub fn new(chunk: Chunk) -> Self {
-        Vm {
-            chunk,
-            ip: 0,
-            stack: [0.0; STACK_MAX],
-            stack_top: 0,
-        }
+        todo!()
     }
 
     pub fn push(&mut self, value: Value) {

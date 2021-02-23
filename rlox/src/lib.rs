@@ -1,20 +1,14 @@
-pub use error::LoxError;
-
-use crate::chunk::Chunk;
-
 mod ast;
-mod chunk;
-mod compiler;
 mod error;
 mod parser;
 mod scanner;
 mod token;
-mod vm;
+mod visitor;
+
+pub use error::LoxError;
 
 pub fn interpret(source: &str) -> Result<(), LoxError> {
-    for token in scanner::tokenize(source).filter(|t| !t.is_whitespace()) {
-        println!("{}", token);
-    }
+    println!("{}", parser::parse(source));
 
     Ok(())
 }

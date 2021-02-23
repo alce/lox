@@ -1,15 +1,16 @@
-use crate::scanner::ScanError;
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, PartialEq)]
+use crate::scanner::ScanError;
+
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Token<'a> {
     pub kind: TokenKind<'a>,
     pub line: u64,
 }
 
 #[allow(bad_style)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum TokenKind<'a> {
     // Single-character tokens.
     LEFT_PAREN,
@@ -61,6 +62,15 @@ pub enum TokenKind<'a> {
     COMMENT,
 
     ERROR(ScanError),
+
+    EOF,
+}
+
+impl<'a> TokenKind<'a> {
+    pub fn is_operator(&self) -> bool {
+        use TokenKind::*;
+        matches!(self, MINUS | PLUS | SLASH | STAR | LEFT_PAREN | RIGHT_PAREN)
+    }
 }
 
 impl<'a> Token<'a> {

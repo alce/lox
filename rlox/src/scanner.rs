@@ -1,8 +1,9 @@
-use crate::token::{Token, TokenKind};
 use std::str::{Chars, FromStr};
+
+use crate::token::{Token, TokenKind};
 use TokenKind::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ScanError {
     UnexpectedChar,
     UnterminatedString,
@@ -21,6 +22,7 @@ pub fn tokenize(mut src: &str) -> impl Iterator<Item = Token<'_>> {
 
         Some(token)
     })
+    .filter(|t| !t.is_whitespace())
 }
 
 struct Scanner<'a> {
