@@ -40,7 +40,7 @@ impl<'a> Parser<'a> {
                 Expr::grouping(lhs)
             }
             t @ MINUS | t @ PLUS => {
-                let ((), rbp) = prefix_binding_power(t);
+                let ((), rbp) = prefix_bp(t);
                 let rhs = self.expr_bp(rbp);
                 Expr::unary(un_op(t), rhs)
             }
@@ -54,7 +54,7 @@ impl<'a> Parser<'a> {
                 o => panic!("bad token: {:?}", o),
             };
 
-            if let Some((lbp, rbp)) = infix_binding_power(op) {
+            if let Some((lbp, rbp)) = infix_bp(op) {
                 if lbp < min_bp {
                     break;
                 }
@@ -100,14 +100,14 @@ fn un_op(t: TokenKind<'_>) -> UnOp {
     }
 }
 
-fn prefix_binding_power(t: TokenKind<'_>) -> ((), u8) {
+fn prefix_bp(t: TokenKind<'_>) -> ((), u8) {
     match t {
         PLUS | MINUS => ((), 5),
         _ => panic!("bad op: {:?}", t),
     }
 }
 
-fn infix_binding_power(t: TokenKind<'_>) -> Option<(u8, u8)> {
+fn infix_bp(t: TokenKind<'_>) -> Option<(u8, u8)> {
     let res = match t {
         PLUS | MINUS => (1, 2),
         STAR | SLASH => (3, 4),
