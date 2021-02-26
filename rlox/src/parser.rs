@@ -1,25 +1,9 @@
-use std::fmt::{self, Display};
-
 use crate::ast::{Expr, Lit, Stmt};
 use crate::token::{Token, TokenKind};
+use crate::LoxError;
 use TokenKind::*;
 
-type Result<T> = std::result::Result<T, ParseError>;
-
-#[derive(Debug)]
-pub enum ParseError {
-    Parse(String),
-    Syntax(String),
-}
-
-impl Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ParseError::Parse(s) => write!(f, "{}", s),
-            ParseError::Syntax(s) => write!(f, "{}", s),
-        }
-    }
-}
+type Result<T> = std::result::Result<T, LoxError>;
 
 pub struct Parser<'a> {
     tokens: Vec<Token<'a>>,
@@ -280,7 +264,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_error(&self, token: Token<'a>, msg: &str) -> ParseError {
+    fn parse_error(&self, token: Token<'a>, msg: &str) -> LoxError {
         let mut s = format!("[line {}] Error", token.line);
         match token.kind {
             EOF => s = format!("{} at end {}", s, msg),
@@ -288,6 +272,6 @@ impl<'a> Parser<'a> {
             _ => s = format!("{} at '{}': {}", s, token, msg),
         }
 
-        ParseError::Parse(s)
+        LoxError::Compile(s)
     }
 }

@@ -1,20 +1,11 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fmt;
 use std::rc::Rc;
 
 use crate::ast::{BinOp, Expr, Stmt, UnOp};
 use crate::value::Value;
 use crate::visitor::{ExprVisitor, StmtVisitor};
-
-pub struct RealRuntimeError(pub String, pub u64);
-
-impl fmt::Display for RealRuntimeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)?;
-        write!(f, "line {}", self.1)
-    }
-}
+use crate::LoxError;
 
 pub struct Interpreter {
     env: Rc<RefCell<Environment>>,
@@ -76,7 +67,7 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), RealRuntimeError> {
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), LoxError> {
         for stmt in stmts {
             self.execute(&stmt)?
         }
@@ -84,7 +75,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn execute(&mut self, stmt: &Stmt) -> Result<(), RealRuntimeError> {
+    fn execute(&mut self, stmt: &Stmt) -> Result<(), LoxError> {
         self.visit_stmt(stmt)
     }
 
@@ -92,7 +83,7 @@ impl Interpreter {
         &mut self,
         stmts: &[Stmt],
         env: Rc<RefCell<Environment>>,
-    ) -> Result<(), RealRuntimeError> {
+    ) -> Result<(), LoxError> {
         let prev = std::mem::replace(&mut self.env, env);
 
         for stmt in stmts {
@@ -107,11 +98,11 @@ impl Interpreter {
         Ok(())
     }
 
-    fn evaluate(&mut self, expr: &Expr) -> Result<Value, RealRuntimeError> {
+    fn evaluate(&mut self, expr: &Expr) -> Result<Value, LoxError> {
         self.visit_expr(expr)
     }
 
-    fn unary_expr(&mut self, op: UnOp, rhs: &Expr, line: u64) -> Result<Value, RealRuntimeError> {
+    fn unary_expr(&mut self, op: UnOp, rhs: &Expr, line: u64) -> Result<Value, LoxError> {
         let val = self.evaluate(rhs)?;
 
         let res = match op {
@@ -119,21 +110,16 @@ impl Interpreter {
             UnOp::Not => val.not(),
         };
 
-        res.map_err(|e| RealRuntimeError(e.to_string(), line))
+        res.map_err(|e| LoxError::Runtime(e.to_string(), line))
     }
 
-    fn assign_expr(
-        &mut self,
-        name: &str,
-        expr: &Expr,
-        line: u64,
-    ) -> Result<Value, RealRuntimeError> {
+    fn assign_expr(&mut self, name: &str, expr: &Expr, line: u64) -> Result<Value, LoxError> {
         let val = self.evaluate(expr)?;
 
         self.env
             .borrow_mut()
             .assign(name, val.clone())
-            .map_err(|e| RealRuntimeError(e, line))?;
+            .map_err(|e| LoxError::Runtime(e, line))?;
 
         Ok(val)
     }
@@ -144,7 +130,7 @@ impl Interpreter {
         op: BinOp,
         rhs: &Expr,
         line: u64,
-    ) -> Result<Value, RealRuntimeError> {
+    ) -> Result<Value, LoxError> {
         let lhs = self.evaluate(lhs)?;
         let rhs = self.evaluate(rhs)?;
 
@@ -161,12 +147,12 @@ impl Interpreter {
             BinOp::NotEq => Ok(Value::from(lhs.ne(&rhs))),
         };
 
-        res.map_err(|e| RealRuntimeError(e.to_string(), line))
+        res.map_err(|e| LoxError::Runtime(e.to_string(), line))
     }
 }
 
-impl ExprVisitor<Result<Value, RealRuntimeError>> for Interpreter {
-    fn visit_expr(&mut self, e: &Expr) -> Result<Value, RealRuntimeError> {
+impl ExprVisitor<Result<Value, LoxError>> for Interpreter {
+    fn visit_expr(&mut self, e: &Expr) -> Result<Value, LoxError> {
         match e {
             Expr::Literal(lit) => Ok(Value::from(lit)),
             Expr::Grouping(expr) => self.visit_expr(expr),
@@ -176,14 +162,14 @@ impl ExprVisitor<Result<Value, RealRuntimeError>> for Interpreter {
                 .env
                 .borrow_mut()
                 .get(name)
-                .map_err(|e| RealRuntimeError(e, *line)),
+                .map_err(|e| LoxError::Runtime(e, *line)),
             Expr::Assign(name, expr, line) => self.assign_expr(name, expr, *line),
         }
     }
 }
 
-impl StmtVisitor<Result<(), RealRuntimeError>> for Interpreter {
-    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<(), RealRuntimeError> {
+impl StmtVisitor<Result<(), LoxError>> for Interpreter {
+    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<(), LoxError> {
         match stmt {
             Stmt::Expr(expr) => self.evaluate(expr).map(|_| ()),
             Stmt::Print(expr) => self.evaluate(expr).map(|val| println!("{}", val)),

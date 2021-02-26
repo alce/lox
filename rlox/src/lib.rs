@@ -9,7 +9,6 @@ mod visitor;
 
 use crate::ast::Stmt;
 pub use crate::interpreter::Interpreter;
-use crate::parser::ParseError;
 pub use error::LoxError;
 
 pub fn interpret(source: &str) -> Result<(), LoxError> {
@@ -19,6 +18,6 @@ pub fn interpret(source: &str) -> Result<(), LoxError> {
     interpreter.interpret(stmts).map_err(Into::into)
 }
 
-pub fn parse(source: &str) -> Result<Vec<Stmt>, ParseError> {
+pub fn parse(source: &str) -> Result<Vec<Stmt>, LoxError> {
     parser::parse(source)
 }
