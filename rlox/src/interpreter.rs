@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
 
-use crate::ast::{BinOp, Expr, Stmt, UnOp};
+use crate::ast::{BinOp, Expr, Keyword, Stmt, UnOp};
 use crate::value::Value;
 use crate::visitor::{ExprVisitor, StmtVisitor};
 use crate::LoxError;
@@ -74,8 +74,22 @@ impl Interpreter {
         Ok(())
     }
 
+    fn evaluate(&mut self, expr: &Expr) -> Result<Value, LoxError> {
+        self.visit_expr(expr)
+    }
+
     fn execute(&mut self, stmt: &Stmt) -> Result<(), LoxError> {
-        self.visit_stmt(stmt)
+        match stmt {
+            Stmt::Expr(expr) => self.visit_expression_stmt(expr),
+            Stmt::Block(stmts) => self.visit_block_stmt(&stmts),
+            Stmt::Print(expr) => self.visit_print_stmt(expr),
+            Stmt::Var(name, initializer) => self.visit_var_stmt(name, initializer.as_ref()),
+            Stmt::If {
+                condition,
+                then,
+                r#else,
+            } => self.visit_if_stmt(condition, then, r#else.as_deref()),
+        }
     }
 
     fn execute_block(&mut self, stmts: &[Stmt], env: Rc<RefCell<Env>>) -> Result<(), LoxError> {
@@ -90,21 +104,6 @@ impl Interpreter {
 
         self.env = prev;
         Ok(())
-    }
-
-    fn evaluate(&mut self, expr: &Expr) -> Result<Value, LoxError> {
-        self.visit_expr(expr)
-    }
-
-    fn unary_expr(&mut self, op: UnOp, rhs: &Expr, line: u64) -> Result<Value, LoxError> {
-        let val = self.evaluate(rhs)?;
-
-        let res = match op {
-            UnOp::Neg => val.neg(),
-            UnOp::Not => val.not(),
-        };
-
-        res.map_err(|e| LoxError::Runtime(e.to_string(), line))
     }
 
     fn assign_expr(&mut self, name: &str, expr: &Expr, line: u64) -> Result<Value, LoxError> {
@@ -143,43 +142,95 @@ impl Interpreter {
 
         res.map_err(|e| LoxError::Runtime(e.to_string(), line))
     }
+
+    fn logical_expr(
+        &mut self,
+        lhs: &Expr,
+        kw: Keyword,
+        rhs: &Expr,
+        _line: u64,
+    ) -> Result<Value, LoxError> {
+        let lhs = self.evaluate(lhs)?;
+
+        match kw {
+            Keyword::Or if lhs.is_truthy() => Ok(lhs),
+            Keyword::Or if !lhs.is_truthy() => Ok(lhs),
+            _ => self.evaluate(rhs),
+        }
+    }
+
+    fn unary_expr(&mut self, op: UnOp, rhs: &Expr, line: u64) -> Result<Value, LoxError> {
+        let val = self.evaluate(rhs)?;
+
+        let res = match op {
+            UnOp::Neg => val.neg(),
+            UnOp::Not => val.not(),
+        };
+
+        res.map_err(|e| LoxError::Runtime(e.to_string(), line))
+    }
 }
 
 impl ExprVisitor<Result<Value, LoxError>> for Interpreter {
     fn visit_expr(&mut self, e: &Expr) -> Result<Value, LoxError> {
         match e {
-            Expr::Literal(lit) => Ok(Value::from(lit)),
-            Expr::Grouping(expr) => self.visit_expr(expr),
-            Expr::Unary(op, expr, line) => self.unary_expr(*op, expr, *line),
+            Expr::Assign(name, expr, line) => self.assign_expr(name, expr, *line),
             Expr::Binary { lhs, op, rhs, line } => self.binary_expr(lhs, *op, rhs, *line),
+            Expr::Grouping(expr) => self.visit_expr(expr),
+            Expr::Literal(lit) => Ok(Value::from(lit)),
+            Expr::Logical { lhs, kw, rhs, line } => self.logical_expr(lhs, *kw, rhs, *line),
+            Expr::Unary(op, expr, line) => self.unary_expr(*op, expr, *line),
             Expr::Variable(name, line) => self
                 .env
                 .borrow_mut()
                 .get(name)
                 .map_err(|e| LoxError::Runtime(e, *line)),
-            Expr::Assign(name, expr, line) => self.assign_expr(name, expr, *line),
         }
     }
 }
 
-impl StmtVisitor<Result<(), LoxError>> for Interpreter {
-    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<(), LoxError> {
-        match stmt {
-            Stmt::Expr(expr) => self.evaluate(expr).map(|_| ()),
-            Stmt::Print(expr) => self.evaluate(expr).map(|val| println!("{}", val)),
-            Stmt::Var(name, value) => {
-                let val = if let Some(v) = value {
-                    self.evaluate(v)?
-                } else {
-                    Value::Nil
-                };
+impl StmtVisitor for Interpreter {
+    type Output = Result<(), LoxError>;
 
-                Ok(self.env.borrow_mut().define(name, val))
-            }
-            Stmt::Block(stmts) => self.execute_block(
-                stmts,
-                Rc::new(RefCell::new(Env::with_environment(self.env.clone()))),
-            ),
+    fn visit_block_stmt(&mut self, stmts: &[Stmt]) -> Self::Output {
+        self.execute_block(
+            &stmts,
+            Rc::new(RefCell::new(Env::with_environment(self.env.clone()))),
+        )
+    }
+
+    fn visit_expression_stmt(&mut self, expr: &Expr) -> Self::Output {
+        self.evaluate(expr).map(|_| ())
+    }
+
+    fn visit_if_stmt(
+        &mut self,
+        condition: &Expr,
+        then: &Stmt,
+        r#else: Option<&Stmt>,
+    ) -> Self::Output {
+        if self.evaluate(condition)?.is_truthy() {
+            self.execute(then)?
+        } else if let Some(stmt) = r#else {
+            self.execute(stmt)?
         }
+
+        Ok(())
+    }
+
+    fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Output {
+        self.evaluate(expr).map(|val| println!("{}", val))
+    }
+
+    fn visit_var_stmt(&mut self, name: &str, initializer: Option<&Expr>) -> Self::Output {
+        let val = if let Some(v) = initializer {
+            self.evaluate(&v)?
+        } else {
+            Value::Nil
+        };
+
+        self.env.borrow_mut().define(&name, val);
+
+        Ok(())
     }
 }

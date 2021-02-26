@@ -89,6 +89,14 @@ impl Value {
             _ => Err(TWO_NUMBERS),
         }
     }
+
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Value::Nil => false,
+            Value::Bool(b) => *b,
+            _ => true,
+        }
+    }
 }
 
 impl fmt::Display for Value {

@@ -55,15 +55,40 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt> {
-        if self._match(&[PRINT]) {
-            return self.print_statement();
+        match self.peek().kind {
+            PRINT => {
+                self.advance();
+                self.print_statement()
+            }
+            LEFT_BRACE => {
+                self.advance();
+                Ok(Stmt::Block(self.block()?))
+            }
+            IF => {
+                self.advance();
+                self.if_statement()
+            }
+            _ => self.expression_statement(),
         }
+    }
 
-        if self._match(&[LEFT_BRACE]) {
-            return Ok(Stmt::Block(self.block()?));
-        }
+    fn if_statement(&mut self) -> Result<Stmt> {
+        self.consume(LEFT_PAREN, "Expect '(' after 'if'.")?;
+        let condition = self.expression()?;
+        self.consume(RIGHT_PAREN, "Expect ')' after 'if condition'.")?;
 
-        self.expression_statement()
+        let then = self.statement()?;
+        let r#else = if self._match(&[ELSE]) {
+            Some(Box::new(self.statement()?))
+        } else {
+            None
+        };
+
+        Ok(Stmt::If {
+            condition,
+            then: Box::new(then),
+            r#else,
+        })
     }
 
     fn print_statement(&mut self) -> Result<Stmt> {
@@ -92,7 +117,7 @@ impl<'a> Parser<'a> {
     }
 
     fn assignment(&mut self) -> Result<Expr> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
 
         if self._match(&[EQUAL]) {
             let tok = self.previous();
@@ -105,6 +130,30 @@ impl<'a> Parser<'a> {
         }
 
         Ok(expr)
+    }
+
+    fn or(&mut self) -> Result<Expr> {
+        let mut lhs = self.and()?;
+
+        while self._match(&[OR]) {
+            let op = self.previous();
+            let rhs = self.and()?;
+            lhs = Expr::logical(lhs, op.kind.into(), rhs, op.line);
+        }
+
+        Ok(lhs)
+    }
+
+    fn and(&mut self) -> Result<Expr> {
+        let mut lhs = self.equality()?;
+
+        while self._match(&[AND]) {
+            let op = self.previous();
+            let rhs = self.equality()?;
+            lhs = Expr::logical(lhs, op.kind.into(), rhs, op.line);
+        }
+
+        Ok(lhs)
     }
 
     fn equality(&mut self) -> Result<Expr> {
