@@ -1,7 +1,10 @@
 use crate::ast::{Expr, Lit, Stmt};
-use crate::token::{Token, TokenKind};
+use crate::scanner;
+use crate::token::{
+    Token,
+    TokenKind::{self, *},
+};
 use crate::LoxError;
-use TokenKind::*;
 
 type Result<T> = std::result::Result<T, LoxError>;
 
@@ -10,8 +13,8 @@ pub struct Parser<'a> {
     idx: usize,
 }
 
-pub fn parse(source: &str) -> Result<Vec<Stmt>> {
-    let tokens = crate::scanner::tokenize(source).collect();
+pub fn parse(source: &str) -> (Vec<Stmt>, Vec<LoxError>) {
+    let tokens = scanner::tokenize(source).collect();
     Parser::new(tokens).parse()
 }
 
@@ -20,14 +23,29 @@ impl<'a> Parser<'a> {
         Parser { tokens, idx: 0 }
     }
 
-    fn parse(&mut self) -> Result<Vec<Stmt>> {
+    fn parse(&mut self) -> (Vec<Stmt>, Vec<LoxError>) {
         let mut stmts = vec![];
+        let mut errors = vec![];
 
         while !self.at_end() {
-            stmts.push(self.declaration()?)
+            match self.declaration() {
+                Ok(stmt) => stmts.push(stmt),
+                Err(e) => {
+                    errors.push(e);
+                    self.synchronize();
+                }
+            }
         }
 
-        Ok(stmts)
+        (stmts, errors)
+    }
+
+    fn declaration(&mut self) -> Result<Stmt> {
+        if self._match(&[VAR]) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        }
     }
 
     fn expression(&mut self) -> Result<Expr> {
@@ -44,14 +62,6 @@ impl<'a> Parser<'a> {
         self.consume(RIGHT_BRACE, "Expect '}' after block.")?;
 
         Ok(stmts)
-    }
-
-    fn declaration(&mut self) -> Result<Stmt> {
-        if self._match(&[VAR]) {
-            self.var_declaration()
-        } else {
-            self.statement()
-        }
     }
 
     fn statement(&mut self) -> Result<Stmt> {
@@ -292,7 +302,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    #[allow(unused)]
     fn synchronize(&mut self) {
         self.advance();
 

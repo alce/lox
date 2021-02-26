@@ -12,12 +12,21 @@ pub use crate::interpreter::Interpreter;
 pub use error::LoxError;
 
 pub fn interpret(source: &str) -> Result<(), LoxError> {
-    let stmts = parser::parse(source)?;
+    let stmts = parse(source)?;
     let mut interpreter = Interpreter::new();
-
     interpreter.interpret(stmts).map_err(Into::into)
 }
 
 pub fn parse(source: &str) -> Result<Vec<Stmt>, LoxError> {
-    parser::parse(source)
+    let (stmts, errors) = parser::parse(source);
+
+    if errors.is_empty() {
+        return Ok(stmts);
+    }
+
+    for error in &errors[..errors.len() - 1] {
+        eprintln!("{}", error);
+    }
+
+    Err(errors.last().cloned().unwrap())
 }
