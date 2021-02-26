@@ -1,19 +1,32 @@
-#![allow(unused)]
+use std::convert::TryFrom;
 use std::fmt;
 
+use crate::token::TokenKind;
 use crate::visitor::AstPrinter;
 
 // Expressions
 #[derive(Debug)]
 pub enum Expr {
+    Assign(String, Box<Expr>, u64),
     Binary {
         lhs: Box<Expr>,
         op: BinOp,
         rhs: Box<Expr>,
+        line: u64,
     },
     Grouping(Box<Expr>),
-    Unary(UnOp, Box<Expr>),
+    Unary(UnOp, Box<Expr>, u64),
     Literal(Lit),
+    Variable(String, u64),
+}
+
+// Statements
+#[derive(Debug)]
+pub enum Stmt {
+    Expr(Expr),
+    Print(Expr),
+    Var(String, Option<Expr>),
+    Block(Vec<Stmt>),
 }
 
 // Literals
@@ -48,20 +61,68 @@ pub enum UnOp {
 }
 
 impl Expr {
-    pub fn binary(lhs: Expr, op: BinOp, rhs: Expr) -> Expr {
+    pub fn binary(lhs: Expr, op: BinOp, rhs: Expr, line: u64) -> Expr {
         Expr::Binary {
             lhs: Box::new(lhs),
             op,
             rhs: Box::new(rhs),
+            line,
         }
     }
 
-    pub fn unary(op: UnOp, rhs: Expr) -> Expr {
-        Expr::Unary(op, Box::new(rhs))
+    pub fn unary(op: UnOp, rhs: Expr, line: u64) -> Expr {
+        Expr::Unary(op, Box::new(rhs), line)
     }
 
     pub fn grouping(expr: Expr) -> Expr {
         Expr::Grouping(Box::new(expr))
+    }
+
+    pub fn assign(name: String, expr: Expr, line: u64) -> Expr {
+        Expr::Assign(name, Box::new(expr), line)
+    }
+}
+
+impl TryFrom<TokenKind<'_>> for Expr {
+    type Error = ();
+
+    fn try_from(t: TokenKind<'_>) -> Result<Self, Self::Error> {
+        match t {
+            TokenKind::TRUE => Ok(Expr::Literal(Lit::Bool(true))),
+            TokenKind::FALSE => Ok(Expr::Literal(Lit::Bool(false))),
+            TokenKind::NIL => Ok(Expr::Literal(Lit::Nil)),
+            TokenKind::NUMBER(n) => Ok(Expr::Literal(Lit::Num(n))),
+            TokenKind::STRING(s) => Ok(Expr::Literal(Lit::Str(s.into()))),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<TokenKind<'_>> for BinOp {
+    fn from(t: TokenKind<'_>) -> Self {
+        match t {
+            TokenKind::PLUS => BinOp::Add,
+            TokenKind::MINUS => BinOp::Sub,
+            TokenKind::STAR => BinOp::Mul,
+            TokenKind::SLASH => BinOp::Div,
+            TokenKind::EQUAL_EQUAL => BinOp::Eq,
+            TokenKind::BANG_EQUAL => BinOp::NotEq,
+            TokenKind::LESS => BinOp::Lt,
+            TokenKind::LESS_EQUAL => BinOp::LtEq,
+            TokenKind::GREATER => BinOp::Gt,
+            TokenKind::GREATER_EQUAL => BinOp::GtEq,
+            _ => panic!("{} is not a binary operator", t),
+        }
+    }
+}
+
+impl From<TokenKind<'_>> for UnOp {
+    fn from(t: TokenKind<'_>) -> Self {
+        match t {
+            TokenKind::BANG => UnOp::Not,
+            TokenKind::MINUS => UnOp::Neg,
+            _ => panic!("{} is not a unary operator", t),
+        }
     }
 }
 
@@ -105,5 +166,16 @@ impl fmt::Display for UnOp {
             UnOp::Neg => "-",
             UnOp::Not => "!",
         })
+    }
+}
+
+impl fmt::Display for Stmt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Stmt::Expr(e) => write!(f, "SE({})", e),
+            Stmt::Print(e) => write!(f, "Print({})", e),
+            Stmt::Var(s, e) => write!(f, "Var({}={:?})", s, e),
+            Stmt::Block(stmts) => write!(f, "Block({:?})", stmts),
+        }
     }
 }

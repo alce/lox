@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::scanner::ScanError;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct Token<'a> {
     pub kind: TokenKind<'a>,
     pub line: u64,
@@ -67,9 +67,34 @@ pub enum TokenKind<'a> {
 }
 
 impl<'a> TokenKind<'a> {
+    #[allow(unused)]
     pub fn is_operator(&self) -> bool {
         use TokenKind::*;
-        matches!(self, MINUS | PLUS | SLASH | STAR | LEFT_PAREN | RIGHT_PAREN)
+        matches!(self, MINUS | PLUS | SLASH | STAR | LEFT_PAREN)
+    }
+
+    pub fn prefix_bp(&self) -> ((), u8) {
+        match self {
+            TokenKind::PLUS | TokenKind::MINUS => ((), 15),
+            TokenKind::BANG => ((), 16),
+            _ => panic!("no prefix bp for {} yet", self),
+        }
+    }
+
+    pub fn infix_bp(&self) -> Option<(u8, u8)> {
+        use TokenKind::*;
+        match self {
+            EQUAL_EQUAL | BANG_EQUAL => Some((1, 2)),
+            GREATER | GREATER_EQUAL | LESS | LESS_EQUAL => Some((3, 4)),
+            MINUS | PLUS => Some((5, 6)),
+            STAR | SLASH => Some((7, 8)),
+            _ => None,
+        }
+    }
+
+    pub fn is_literal(&self) -> bool {
+        use TokenKind::*;
+        matches!(self, NUMBER(_) | NIL | STRING(_) | TRUE | FALSE)
     }
 }
 
@@ -83,13 +108,24 @@ impl<'a> Token<'a> {
     }
 }
 
-impl fmt::Display for Token<'_> {
+impl fmt::Debug for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
-            TokenKind::STRING(s) => write!(f, "STRING {} {}", s, s),
+            TokenKind::STRING(s) => write!(f, "STRING {:?} {}", s, s),
             TokenKind::NUMBER(s) => write!(f, "NUMBER {} {:?}", s, s),
             TokenKind::IDENTIFIER(s) => write!(f, "IDENTIFIER {} null", s),
             _ => write!(f, "{:?} {} null", self.kind, self.kind),
+        }
+    }
+}
+
+impl fmt::Display for Token<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            TokenKind::STRING(s) => write!(f, "{}", s),
+            TokenKind::NUMBER(s) => write!(f, "{}", s,),
+            TokenKind::IDENTIFIER(s) => write!(f, "{}", s),
+            _ => write!(f, "{}", self.kind),
         }
     }
 }
@@ -126,7 +162,11 @@ impl fmt::Display for TokenKind<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use TokenKind::*;
 
-        let s = match self {
+        if let NUMBER(n) = self {
+            return write!(f, " {}", n);
+        }
+
+        f.write_str(match self {
             LEFT_PAREN => "(",
             RIGHT_PAREN => ")",
             LEFT_BRACE => "{",
@@ -162,9 +202,11 @@ impl fmt::Display for TokenKind<'_> {
             TRUE => "true",
             VAR => "var",
             WHILE => "while",
-            _ => "",
-        };
-
-        write!(f, "{}", s)
+            IDENTIFIER(s) => s,
+            STRING(s) => s,
+            EOF => "eof",
+            ERROR(_) => "err",
+            _ => "%",
+        })
     }
 }

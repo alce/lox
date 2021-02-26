@@ -1,12 +1,15 @@
 use std::fmt;
 
-use super::ast::Expr;
+use super::ast::{Expr, Stmt};
 
-pub trait Visitor<T> {
+pub trait ExprVisitor<T> {
     fn visit_expr(&mut self, e: &Expr) -> T;
 }
 
-// This is dodgy
+pub trait StmtVisitor<T> {
+    fn visit_stmt(&mut self, s: &Stmt) -> T;
+}
+
 pub struct AstPrinter;
 
 impl AstPrinter {
@@ -25,13 +28,15 @@ impl AstPrinter {
     }
 }
 
-impl Visitor<String> for AstPrinter {
+impl ExprVisitor<String> for AstPrinter {
     fn visit_expr(&mut self, e: &Expr) -> String {
         match e {
-            Expr::Binary { rhs, lhs, op } => self.parenthesize(op, &[lhs, rhs]),
+            Expr::Binary { rhs, lhs, op, .. } => self.parenthesize(op, &[lhs, rhs]),
             Expr::Grouping(exp) => self.parenthesize(&"group", &[exp]),
-            Expr::Unary(op, expr) => self.parenthesize(op, &[expr]),
+            Expr::Unary(op, expr, ..) => self.parenthesize(op, &[expr]),
             Expr::Literal(lit) => format!("{}", lit),
+            Expr::Variable(s, ..) => s.to_string(),
+            Expr::Assign(name, expr, ..) => self.parenthesize(name, &[expr]),
         }
     }
 }

@@ -1,3 +1,4 @@
+use std::fmt;
 use std::str::{Chars, FromStr};
 
 use crate::token::{Token, TokenKind};
@@ -5,17 +6,33 @@ use TokenKind::*;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ScanError {
-    UnexpectedChar,
+    UnexpectedChar(char),
     UnterminatedString,
+}
+
+impl fmt::Display for ScanError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ScanError::UnexpectedChar(c) => write!(f, "Unexpected character '{}'", c),
+            ScanError::UnterminatedString => write!(f, "Unterminated string."),
+        }
+    }
 }
 
 pub fn tokenize(mut src: &str) -> impl Iterator<Item = Token<'_>> {
     let mut start_line = 1;
+    let mut at_end = false;
 
     std::iter::from_fn(move || {
-        if src.is_empty() {
+        if at_end {
             return None;
         }
+
+        if src.is_empty() {
+            at_end = true;
+            return Some(Token::new(EOF, start_line));
+        }
+
         let (token, consumed) = Scanner::new(src, start_line).scan();
         start_line = token.line;
         src = &src[consumed..];
@@ -72,7 +89,7 @@ impl<'a> Scanner<'a> {
             '>' => self.maybe_double(GREATER, GREATER_EQUAL),
             '<' => self.maybe_double(LESS, LESS_EQUAL),
             '"' => self.string(),
-            _ => ERROR(ScanError::UnexpectedChar),
+            _ => ERROR(ScanError::UnexpectedChar(c)),
         };
 
         (Token::new(kind, self.line), self.consumed())
@@ -101,7 +118,7 @@ impl<'a> Scanner<'a> {
     fn string(&mut self) -> TokenKind<'a> {
         while let Some(c) = self.advance() {
             if c == '"' {
-                return STRING(&self.src[..self.consumed()]);
+                return STRING(&self.src[1..self.consumed() - 1]);
             }
         }
 
@@ -154,109 +171,4 @@ fn is_ident_start(c: char) -> bool {
 
 fn is_number(c: char) -> bool {
     matches!(c, '0'..='9')
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn tokenize(src: &str) -> Vec<TokenKind<'_>> {
-        super::tokenize(src)
-            .filter(|t| !t.is_whitespace())
-            .map(|t| t.kind)
-            .collect()
-    }
-
-    #[test]
-    fn test_arithmetic() {
-        let actual = tokenize("-  (2 + 2) * 8 / 2.2;");
-
-        let expected = [
-            MINUS,
-            LEFT_PAREN,
-            NUMBER(2.0),
-            PLUS,
-            NUMBER(2.0),
-            RIGHT_PAREN,
-            STAR,
-            NUMBER(8.0),
-            SLASH,
-            NUMBER(2.2),
-            SEMICOLON,
-        ];
-
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
-    fn test_strings() {
-        let actual = tokenize(
-            r#" 
-                // don't mind me
-                "lox" "hello..."  "nope
-            "#,
-        );
-
-        let expected = [
-            STRING("\"lox\""),
-            STRING("\"hello...\""),
-            ERROR(ScanError::UnterminatedString),
-        ];
-
-        assert_eq!(actual, expected);
-    }
-
-    #[test]
-    fn test_keywords() {
-        let actual = tokenize(
-            r#" 
-                3 and var foo   fun else 4 //ignore me
-                super class or nil while print whale  
-            "#,
-        );
-
-        let expected = [
-            NUMBER(3.0),
-            AND,
-            VAR,
-            IDENTIFIER("foo"),
-            FUN,
-            ELSE,
-            NUMBER(4.0),
-            SUPER,
-            CLASS,
-            OR,
-            NIL,
-            WHILE,
-            PRINT,
-            IDENTIFIER("whale"),
-        ];
-
-        assert_eq!(actual, expected)
-    }
-
-    #[test]
-    fn test_no_tokens() {
-        let actual = tokenize(" ");
-        assert_eq!(actual, []);
-
-        let actual = tokenize("// nope");
-        assert_eq!(actual, []);
-    }
-
-    #[test]
-    fn line_numbers() {
-        let src = r#"
-            foo
-            22.33
-            bar
-        "#;
-
-        let actual = super::tokenize(src)
-            .filter(|t| !t.is_whitespace())
-            .map(|t| t.line)
-            .collect::<Vec<_>>();
-
-        assert_eq!(actual, [2, 3, 4]);
-    }
 }

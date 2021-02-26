@@ -7,15 +7,18 @@ mod token;
 mod value;
 mod visitor;
 
-use crate::interpreter::Interpreter;
+use crate::ast::Stmt;
+pub use crate::interpreter::Interpreter;
+use crate::parser::ParseError;
 pub use error::LoxError;
 
 pub fn interpret(source: &str) -> Result<(), LoxError> {
-    let expr = parser::parse(source);
-    let mut interpreter = Interpreter {};
-    let val = interpreter.interpret(&expr);
+    let stmts = parser::parse(source)?;
+    let mut interpreter = Interpreter::new();
 
-    println!("{}", val);
+    interpreter.interpret(stmts).map_err(Into::into)
+}
 
-    Ok(())
+pub fn parse(source: &str) -> Result<Vec<Stmt>, ParseError> {
+    parser::parse(source)
 }

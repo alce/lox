@@ -1,11 +1,24 @@
-use crate::ast::{BinOp, Expr, Lit, UnOp};
+use std::fmt::{self, Display};
+
+use crate::ast::{Expr, Lit, Stmt};
 use crate::token::{Token, TokenKind};
 use TokenKind::*;
 
-#[allow(unused)]
+type Result<T> = std::result::Result<T, ParseError>;
+
+#[derive(Debug)]
 pub enum ParseError {
-    EndOfStream,
-    UnexpectedToken,
+    Parse(String),
+    Syntax(String),
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParseError::Parse(s) => write!(f, "{}", s),
+            ParseError::Syntax(s) => write!(f, "{}", s),
+        }
+    }
 }
 
 pub struct Parser<'a> {
@@ -13,9 +26,9 @@ pub struct Parser<'a> {
     idx: usize,
 }
 
-pub fn parse(source: &str) -> Expr {
+pub fn parse(source: &str) -> Result<Vec<Stmt>> {
     let tokens = crate::scanner::tokenize(source).collect();
-    Parser::new(tokens).parse().unwrap()
+    Parser::new(tokens).parse()
 }
 
 impl<'a> Parser<'a> {
@@ -23,109 +36,258 @@ impl<'a> Parser<'a> {
         Parser { tokens, idx: 0 }
     }
 
-    pub fn parse(&mut self) -> Option<Expr> {
-        Some(self.expression())
+    fn parse(&mut self) -> Result<Vec<Stmt>> {
+        let mut stmts = vec![];
+
+        while !self.at_end() {
+            stmts.push(self.declaration()?)
+        }
+
+        Ok(stmts)
     }
 
-    fn expression(&mut self) -> Expr {
-        self.expr_bp(0)
+    fn expression(&mut self) -> Result<Expr> {
+        self.assignment()
     }
 
-    fn expr_bp(&mut self, min_bp: u8) -> Expr {
-        let mut lhs = match self.consume() {
-            NUMBER(n) => Expr::Literal(Lit::Num(n)),
-            LEFT_PAREN => {
-                let lhs = self.expr_bp(0);
-                assert_eq!(self.consume(), RIGHT_PAREN);
-                Expr::grouping(lhs)
-            }
-            t @ MINUS | t @ PLUS => {
-                let ((), rbp) = prefix_bp(t);
-                let rhs = self.expr_bp(rbp);
-                Expr::unary(un_op(t), rhs)
-            }
-            t => panic!("bad token: {:?}", t),
+    fn block(&mut self) -> Result<Vec<Stmt>> {
+        let mut stmts = vec![];
+
+        while !self.check(RIGHT_BRACE) && !self.at_end() {
+            stmts.push(self.declaration()?)
+        }
+
+        self.consume(RIGHT_BRACE, "Expect '}' after block.")?;
+
+        Ok(stmts)
+    }
+
+    // TODO: synchronize
+    fn declaration(&mut self) -> Result<Stmt> {
+        if self._match(&[VAR]) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        }
+    }
+
+    fn statement(&mut self) -> Result<Stmt> {
+        if self._match(&[PRINT]) {
+            return self.print_statement();
+        }
+
+        if self._match(&[LEFT_BRACE]) {
+            return Ok(Stmt::Block(self.block()?));
+        }
+
+        self.expression_statement()
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt> {
+        let val = self.expression()?;
+        self.consume(SEMICOLON, "Expect ';' after value.")?;
+        Ok(Stmt::Print(val))
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt> {
+        let name = self.consume_ident("Expect variable name.")?;
+
+        let initializer = if self._match(&[EQUAL]) {
+            Some(self.expression()?)
+        } else {
+            None
         };
 
-        loop {
-            let op = match self.peek() {
-                EOF => break,
-                t if t.is_operator() => t,
-                o => panic!("bad token: {:?}", o),
+        self.consume(SEMICOLON, "Expect ';' after variable declaration.")?;
+
+        Ok(Stmt::Var(name.to_string(), initializer))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt> {
+        let expr = self.expression()?;
+        self.consume(SEMICOLON, "Expect ';' after expression.")?;
+        Ok(Stmt::Expr(expr))
+    }
+
+    fn assignment(&mut self) -> Result<Expr> {
+        let expr = self.equality()?;
+
+        if self._match(&[EQUAL]) {
+            let tok = self.previous();
+            let val = self.assignment()?;
+
+            return match expr {
+                Expr::Variable(name, ..) => Ok(Expr::assign(name, val, self.peek().line)),
+                _ => Err(self.parse_error(tok, "Invalid assignment target.")),
             };
+        }
 
-            if let Some((lbp, rbp)) = infix_bp(op) {
-                if lbp < min_bp {
-                    break;
-                }
-                self.consume();
-                let rhs = self.expr_bp(rbp);
-                lhs = Expr::binary(lhs, bin_op(op), rhs);
+        Ok(expr)
+    }
 
-                continue;
+    fn equality(&mut self) -> Result<Expr> {
+        let mut lhs = self.comparison()?;
+
+        while self._match(&[BANG_EQUAL, EQUAL_EQUAL]) {
+            let op = self.previous();
+            let rhs = self.comparison()?;
+            lhs = Expr::binary(lhs, op.kind.into(), rhs, op.line)
+        }
+
+        Ok(lhs)
+    }
+    fn comparison(&mut self) -> Result<Expr> {
+        let mut lhs = self.term()?;
+
+        while self._match(&[GREATER, GREATER_EQUAL, LESS, LESS_EQUAL]) {
+            let op = self.previous();
+            let rhs = self.term()?;
+            lhs = Expr::binary(lhs, op.kind.into(), rhs, op.line);
+        }
+
+        Ok(lhs)
+    }
+
+    fn term(&mut self) -> Result<Expr> {
+        let mut lhs = self.factor()?;
+
+        while self._match(&[MINUS, PLUS]) {
+            let op = self.previous();
+            let rhs = self.factor()?;
+            lhs = Expr::binary(lhs, op.kind.into(), rhs, op.line);
+        }
+
+        Ok(lhs)
+    }
+
+    fn factor(&mut self) -> Result<Expr> {
+        let mut lhs = self.unary()?;
+
+        while self._match(&[SLASH, STAR]) {
+            let op = self.previous();
+            let rhs = self.unary()?;
+            lhs = Expr::binary(lhs, op.kind.into(), rhs, op.line);
+        }
+
+        Ok(lhs)
+    }
+
+    fn unary(&mut self) -> Result<Expr> {
+        if self._match(&[BANG, MINUS]) {
+            let op = self.previous();
+            let right = self.unary()?;
+            return Ok(Expr::unary(op.kind.into(), right, op.line));
+        }
+
+        self.primary()
+    }
+
+    // TODO: refactor
+    fn primary(&mut self) -> Result<Expr> {
+        if self._match(&[FALSE]) {
+            return Ok(Expr::Literal(Lit::Bool(false)));
+        }
+
+        if self._match(&[TRUE]) {
+            return Ok(Expr::Literal(Lit::Bool(true)));
+        }
+
+        if self._match(&[NIL]) {
+            return Ok(Expr::Literal(Lit::Nil));
+        }
+
+        match self.advance().kind {
+            NUMBER(n) => Ok(Expr::Literal(Lit::Num(n))),
+            STRING(s) => Ok(Expr::Literal(Lit::Str(s.to_string()))),
+            LEFT_PAREN => {
+                let expr = self.expression()?;
+                self.consume(RIGHT_PAREN, "Expect ')' after expression.")?;
+                Ok(Expr::grouping(expr))
             }
-            break;
-        }
-        lhs
-    }
+            IDENTIFIER(s) => Ok(Expr::Variable(s.to_string(), self.peek().line)),
 
-    fn consume(&mut self) -> TokenKind<'a> {
-        self.idx += 1;
-        self.tokens[self.idx - 1].kind
-    }
-
-    fn peek(&self) -> TokenKind<'a> {
-        match self.tokens.get(self.idx) {
-            Some(t) => t.kind,
-            None => TokenKind::EOF,
+            _ => Err(self.parse_error(self.previous(), "Expect expression.")),
         }
     }
-}
 
-fn bin_op(t: TokenKind<'_>) -> BinOp {
-    match t {
-        PLUS => BinOp::Add,
-        MINUS => BinOp::Sub,
-        STAR => BinOp::Mul,
-        SLASH => BinOp::Div,
-        _ => panic!("not a BinOp {:?}", t),
+    #[allow(unused)]
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.at_end() {
+            if self.previous().kind == SEMICOLON {
+                return;
+            }
+
+            match self.peek().kind {
+                CLASS | FUN | VAR | FOR | IF | WHILE | PRINT | RETURN => return,
+                _ => {
+                    self.advance();
+                }
+            }
+        }
     }
-}
 
-fn un_op(t: TokenKind<'_>) -> UnOp {
-    match t {
-        BANG => UnOp::Neg,
-        MINUS => UnOp::Neg,
-        _ => panic!("not an UnOp {:?}", t),
+    fn _match(&mut self, kinds: &[TokenKind<'a>]) -> bool {
+        for kind in kinds {
+            if self.check(*kind) {
+                self.advance();
+                return true;
+            }
+        }
+        false
     }
-}
 
-fn prefix_bp(t: TokenKind<'_>) -> ((), u8) {
-    match t {
-        PLUS | MINUS => ((), 5),
-        _ => panic!("bad op: {:?}", t),
+    fn check(&self, kind: TokenKind<'a>) -> bool {
+        if self.at_end() {
+            return false;
+        }
+
+        self.peek().kind == kind
     }
-}
 
-fn infix_bp(t: TokenKind<'_>) -> Option<(u8, u8)> {
-    let res = match t {
-        PLUS | MINUS => (1, 2),
-        STAR | SLASH => (3, 4),
-        _ => return None,
-    };
+    fn advance(&mut self) -> Token<'a> {
+        if !self.at_end() {
+            self.idx += 1;
+        }
+        self.previous()
+    }
 
-    Some(res)
-}
+    fn at_end(&self) -> bool {
+        self.peek().kind == EOF
+    }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+    fn peek(&self) -> Token<'a> {
+        self.tokens[self.idx]
+    }
 
-    #[test]
-    fn arithmetic_expression() {
-        let expr = parse("(5 - (3 - 1)) + -1");
-        let expected = "(+ (group (- 5.0 (group (- 3.0 1.0)))) (- 1.0))";
+    fn previous(&self) -> Token<'a> {
+        self.tokens[self.idx - 1]
+    }
 
-        assert_eq!(expr.to_string(), expected);
+    fn consume(&mut self, kind: TokenKind<'a>, msg: &str) -> Result<Token<'a>> {
+        if self.check(kind) {
+            Ok(self.advance())
+        } else {
+            Err(self.parse_error(self.peek(), msg))
+        }
+    }
+
+    fn consume_ident(&mut self, msg: &str) -> Result<Token<'a>> {
+        match self.peek().kind {
+            IDENTIFIER(_) => Ok(self.advance()),
+            _ => Err(self.parse_error(self.peek(), msg)),
+        }
+    }
+
+    fn parse_error(&self, token: Token<'a>, msg: &str) -> ParseError {
+        let mut s = format!("[line {}] Error", token.line);
+        match token.kind {
+            EOF => s = format!("{} at end {}", s, msg),
+            ERROR(msg) => s = format!("{}: {}", s, msg),
+            _ => s = format!("{} at '{}': {}", s, token, msg),
+        }
+
+        ParseError::Parse(s)
     }
 }
