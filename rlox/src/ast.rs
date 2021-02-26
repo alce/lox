@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::fmt;
 
 use crate::token::TokenKind;
@@ -83,21 +82,6 @@ impl Expr {
     }
 }
 
-impl TryFrom<TokenKind<'_>> for Expr {
-    type Error = ();
-
-    fn try_from(t: TokenKind<'_>) -> Result<Self, Self::Error> {
-        match t {
-            TokenKind::TRUE => Ok(Expr::Literal(Lit::Bool(true))),
-            TokenKind::FALSE => Ok(Expr::Literal(Lit::Bool(false))),
-            TokenKind::NIL => Ok(Expr::Literal(Lit::Nil)),
-            TokenKind::NUMBER(n) => Ok(Expr::Literal(Lit::Num(n))),
-            TokenKind::STRING(s) => Ok(Expr::Literal(Lit::Str(s.into()))),
-            _ => Err(()),
-        }
-    }
-}
-
 impl From<TokenKind<'_>> for BinOp {
     fn from(t: TokenKind<'_>) -> Self {
         match t {
@@ -166,16 +150,5 @@ impl fmt::Display for UnOp {
             UnOp::Neg => "-",
             UnOp::Not => "!",
         })
-    }
-}
-
-impl fmt::Display for Stmt {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Stmt::Expr(e) => write!(f, "SE({})", e),
-            Stmt::Print(e) => write!(f, "Print({})", e),
-            Stmt::Var(s, e) => write!(f, "Var({}={:?})", s, e),
-            Stmt::Block(stmts) => write!(f, "Block({:?})", stmts),
-        }
     }
 }

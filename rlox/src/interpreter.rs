@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::mem;
 use std::rc::Rc;
 
 use crate::ast::{BinOp, Expr, Stmt, UnOp};
@@ -8,25 +9,25 @@ use crate::visitor::{ExprVisitor, StmtVisitor};
 use crate::LoxError;
 
 pub struct Interpreter {
-    env: Rc<RefCell<Environment>>,
+    env: Rc<RefCell<Env>>,
 }
 
 #[derive(Debug)]
-struct Environment {
-    enclosing: Option<Rc<RefCell<Environment>>>,
+struct Env {
+    enclosing: Option<Rc<RefCell<Env>>>,
     values: HashMap<String, Value>,
 }
 
-impl Environment {
+impl Env {
     fn new() -> Self {
-        Environment {
+        Env {
             values: HashMap::new(),
             enclosing: None,
         }
     }
 
-    fn with_environment(env: Rc<RefCell<Environment>>) -> Self {
-        Environment {
+    fn with_environment(env: Rc<RefCell<Env>>) -> Self {
+        Env {
             values: HashMap::new(),
             enclosing: Some(env),
         }
@@ -39,12 +40,10 @@ impl Environment {
     fn get(&mut self, name: &str) -> Result<Value, String> {
         if self.values.contains_key(name) {
             Ok(self.values.get(name).cloned().unwrap())
+        } else if let Some(enc) = &mut self.enclosing {
+            enc.borrow_mut().get(name)
         } else {
-            if let Some(enc) = &mut self.enclosing {
-                enc.borrow_mut().get(name)
-            } else {
-                Err(format!("Undefined variable '{}'.", name))
-            }
+            Err(format!("Undefined variable '{}'.", name))
         }
     }
 
@@ -63,7 +62,7 @@ impl Environment {
 impl Interpreter {
     pub fn new() -> Interpreter {
         Interpreter {
-            env: Rc::new(RefCell::new(Environment::new())),
+            env: Rc::new(RefCell::new(Env::new())),
         }
     }
 
@@ -79,12 +78,8 @@ impl Interpreter {
         self.visit_stmt(stmt)
     }
 
-    fn execute_block(
-        &mut self,
-        stmts: &[Stmt],
-        env: Rc<RefCell<Environment>>,
-    ) -> Result<(), LoxError> {
-        let prev = std::mem::replace(&mut self.env, env);
+    fn execute_block(&mut self, stmts: &[Stmt], env: Rc<RefCell<Env>>) -> Result<(), LoxError> {
+        let prev = mem::replace(&mut self.env, env);
 
         for stmt in stmts {
             if let Err(e) = self.execute(stmt) {
@@ -94,7 +89,6 @@ impl Interpreter {
         }
 
         self.env = prev;
-
         Ok(())
     }
 
@@ -174,23 +168,17 @@ impl StmtVisitor<Result<(), LoxError>> for Interpreter {
             Stmt::Expr(expr) => self.evaluate(expr).map(|_| ()),
             Stmt::Print(expr) => self.evaluate(expr).map(|val| println!("{}", val)),
             Stmt::Var(name, value) => {
-                let val = match value {
-                    Some(expr) => match self.evaluate(expr) {
-                        Ok(v) => v,
-                        Err(e) => return Err(e),
-                    },
-                    None => Value::Nil,
+                let val = if let Some(v) = value {
+                    self.evaluate(v)?
+                } else {
+                    Value::Nil
                 };
 
-                self.env.borrow_mut().define(name, val);
-
-                Ok(())
+                Ok(self.env.borrow_mut().define(name, val))
             }
             Stmt::Block(stmts) => self.execute_block(
                 stmts,
-                Rc::new(RefCell::new(Environment::with_environment(
-                    self.env.clone(),
-                ))),
+                Rc::new(RefCell::new(Env::with_environment(self.env.clone()))),
             ),
         }
     }

@@ -46,7 +46,6 @@ impl<'a> Parser<'a> {
         Ok(stmts)
     }
 
-    // TODO: synchronize
     fn declaration(&mut self) -> Result<Stmt> {
         if self._match(&[VAR]) {
             self.var_declaration()
@@ -83,7 +82,6 @@ impl<'a> Parser<'a> {
         };
 
         self.consume(SEMICOLON, "Expect ';' after variable declaration.")?;
-
         Ok(Stmt::Var(name.to_string(), initializer))
     }
 
@@ -120,6 +118,7 @@ impl<'a> Parser<'a> {
 
         Ok(lhs)
     }
+
     fn comparison(&mut self) -> Result<Expr> {
         let mut lhs = self.term()?;
 
@@ -166,21 +165,11 @@ impl<'a> Parser<'a> {
         self.primary()
     }
 
-    // TODO: refactor
     fn primary(&mut self) -> Result<Expr> {
-        if self._match(&[FALSE]) {
-            return Ok(Expr::Literal(Lit::Bool(false)));
-        }
-
-        if self._match(&[TRUE]) {
-            return Ok(Expr::Literal(Lit::Bool(true)));
-        }
-
-        if self._match(&[NIL]) {
-            return Ok(Expr::Literal(Lit::Nil));
-        }
-
         match self.advance().kind {
+            FALSE => Ok(Expr::Literal(Lit::Bool(false))),
+            TRUE => Ok(Expr::Literal(Lit::Bool(true))),
+            NIL => Ok(Expr::Literal(Lit::Nil)),
             NUMBER(n) => Ok(Expr::Literal(Lit::Num(n))),
             STRING(s) => Ok(Expr::Literal(Lit::Str(s.to_string()))),
             LEFT_PAREN => {
@@ -189,7 +178,6 @@ impl<'a> Parser<'a> {
                 Ok(Expr::grouping(expr))
             }
             IDENTIFIER(s) => Ok(Expr::Variable(s.to_string(), self.peek().line)),
-
             _ => Err(self.parse_error(self.previous(), "Expect expression.")),
         }
     }
@@ -219,6 +207,7 @@ impl<'a> Parser<'a> {
                 return true;
             }
         }
+
         false
     }
 
@@ -266,6 +255,7 @@ impl<'a> Parser<'a> {
 
     fn parse_error(&self, token: Token<'a>, msg: &str) -> LoxError {
         let mut s = format!("[line {}] Error", token.line);
+
         match token.kind {
             EOF => s = format!("{} at end {}", s, msg),
             ERROR(msg) => s = format!("{}: {}", s, msg),
