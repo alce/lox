@@ -89,6 +89,7 @@ impl Interpreter {
                 then,
                 r#else,
             } => self.visit_if_stmt(condition, then, r#else.as_deref()),
+            Stmt::While(condition, body) => self.visit_while_stmt(condition, body),
         }
     }
 
@@ -154,7 +155,7 @@ impl Interpreter {
 
         match kw {
             Keyword::Or if lhs.is_truthy() => Ok(lhs),
-            Keyword::Or if !lhs.is_truthy() => Ok(lhs),
+            Keyword::And if !lhs.is_truthy() => Ok(lhs),
             _ => self.evaluate(rhs),
         }
     }
@@ -230,6 +231,14 @@ impl StmtVisitor for Interpreter {
         };
 
         self.env.borrow_mut().define(&name, val);
+
+        Ok(())
+    }
+
+    fn visit_while_stmt(&mut self, condition: &Expr, body: &Stmt) -> Self::Output {
+        while self.evaluate(condition)?.is_truthy() {
+            self.execute(body)?
+        }
 
         Ok(())
     }

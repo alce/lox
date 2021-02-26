@@ -68,8 +68,60 @@ impl<'a> Parser<'a> {
                 self.advance();
                 self.if_statement()
             }
+            WHILE => {
+                self.advance();
+                self.while_statement()
+            }
+            FOR => {
+                self.advance();
+                self.for_statement()
+            }
             _ => self.expression_statement(),
         }
+    }
+
+    fn for_statement(&mut self) -> Result<Stmt> {
+        self.consume(LEFT_PAREN, "Expect '(' after 'for'.")?;
+
+        let initializer = match self.peek().kind {
+            SEMICOLON => {
+                self.advance();
+                None
+            }
+            VAR => {
+                self.advance();
+                Some(self.var_declaration()?)
+            }
+            _ => Some(self.expression_statement()?),
+        };
+
+        let condition = match self.peek().kind {
+            SEMICOLON => Expr::Literal(Lit::Bool(true)),
+            _ => self.expression()?,
+        };
+
+        self.consume(SEMICOLON, "Expect ';' after loop condition.")?;
+
+        let increment = match self.peek().kind {
+            RIGHT_PAREN => None,
+            _ => Some(self.expression()?),
+        };
+
+        self.consume(RIGHT_PAREN, "Expect ')' after for clauses.")?;
+
+        let mut body = self.statement()?;
+
+        if let Some(expr) = increment {
+            body = Stmt::Block(vec![body, Stmt::Expr(expr)])
+        }
+
+        body = Stmt::While(condition, Box::new(body));
+
+        if let Some(expr) = initializer {
+            body = Stmt::Block(vec![expr, body])
+        }
+
+        Ok(body)
     }
 
     fn if_statement(&mut self) -> Result<Stmt> {
@@ -108,6 +160,15 @@ impl<'a> Parser<'a> {
 
         self.consume(SEMICOLON, "Expect ';' after variable declaration.")?;
         Ok(Stmt::Var(name.to_string(), initializer))
+    }
+
+    fn while_statement(&mut self) -> Result<Stmt> {
+        self.consume(LEFT_PAREN, "Expert '(' after 'while'.")?;
+        let condition = self.expression()?;
+        self.consume(RIGHT_PAREN, "Expert '(' after 'while'.")?;
+        let body = self.statement()?;
+
+        Ok(Stmt::While(condition, Box::new(body)))
     }
 
     fn expression_statement(&mut self) -> Result<Stmt> {

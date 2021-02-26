@@ -68,6 +68,7 @@ pub enum Stmt {
     },
     Print(Expr),
     Var(String, Option<Expr>),
+    While(Expr, Box<Stmt>),
 }
 
 // Unary Operators

@@ -23,6 +23,8 @@ pub trait StmtVisitor {
     fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Output;
 
     fn visit_var_stmt(&mut self, name: &str, initializer: Option<&Expr>) -> Self::Output;
+
+    fn visit_while_stmt(&mut self, condition: &Expr, body: &Stmt) -> Self::Output;
 }
 
 pub struct AstPrinter;
@@ -44,7 +46,6 @@ impl AstPrinter {
 }
 
 impl ExprVisitor<String> for AstPrinter {
-    //
     fn visit_expr(&mut self, e: &Expr) -> String {
         match e {
             Expr::Binary { rhs, lhs, op, .. } => self.parenthesize(op, &[lhs, rhs]),
