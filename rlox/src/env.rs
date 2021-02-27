@@ -49,11 +49,27 @@ impl Env {
             Err(format!("Undefined variable '{}'.", name))
         }
     }
+
+    pub fn assign_at(
+        &mut self,
+        _distance: usize,
+        _name: &str,
+        _value: Value,
+    ) -> Result<(), String> {
+        todo!()
+    }
+
+    pub fn get_at(&mut self, _distance: usize, _name: &str) -> Result<Value, String> {
+        todo!()
+    }
+
+    pub fn ancestor(&mut self, _distance: usize) -> Rc<RefCell<Env>> {
+        todo!()
+    }
 }
 
 impl Default for Env {
     fn default() -> Self {
-        //
         Env::new()
     }
 }

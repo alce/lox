@@ -5,6 +5,8 @@ mod error;
 mod function;
 mod interpreter;
 mod parser;
+mod printer;
+mod resolver;
 mod scanner;
 mod token;
 mod value;
@@ -17,6 +19,7 @@ pub use error::LoxError;
 pub fn interpret(source: &str) -> Result<(), LoxError> {
     let stmts = parse(source)?;
     let mut interpreter = Interpreter::new();
+
     interpreter.interpret(stmts).map_err(Into::into)
 }
 

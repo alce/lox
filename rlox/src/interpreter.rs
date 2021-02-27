@@ -1,8 +1,9 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
 
-use crate::ast::{BinOp, Expr, Keyword, Stmt, UnOp};
+use crate::ast::{BinOp, Expr, Keyword, Lit, Stmt, UnOp};
 use crate::clock::Clock;
 use crate::env::Env;
 use crate::function::Func;
@@ -13,6 +14,7 @@ use crate::LoxError;
 pub struct Interpreter {
     env: Rc<RefCell<Env>>,
     globals: Rc<RefCell<Env>>,
+    locals: HashMap<String, usize>,
 }
 
 impl Interpreter {
@@ -24,6 +26,7 @@ impl Interpreter {
         Interpreter {
             env: globals.clone(),
             globals,
+            locals: HashMap::new(),
         }
     }
 
@@ -39,30 +42,8 @@ impl Interpreter {
         Ok(())
     }
 
-    fn evaluate(&mut self, expr: &Expr) -> Result<Value, LoxError> {
-        self.visit_expr(expr)
-    }
-
-    fn execute(&mut self, stmt: &Stmt) -> Result<(), LoxError> {
-        match stmt {
-            Stmt::Block(stmts) => self.visit_block_stmt(&stmts),
-            Stmt::Expr(expr) => self.visit_expression_stmt(expr),
-            Stmt::Function {
-                name,
-                params,
-                body,
-                line,
-            } => self.visit_function_stmt(name, params.as_slice(), body, *line),
-            Stmt::Print(expr) => self.visit_print_stmt(expr),
-            Stmt::Return(expr, line) => self.visit_return_stmt(expr.as_ref(), *line),
-            Stmt::Var(name, initializer) => self.visit_var_stmt(name, initializer.as_ref()),
-            Stmt::If {
-                condition,
-                then,
-                r#else,
-            } => self.visit_if_stmt(condition, then, r#else.as_deref()),
-            Stmt::While(condition, body) => self.visit_while_stmt(condition, body),
-        }
+    pub fn resolve(&mut self, name: &str, depth: usize) {
+        self.locals.insert(name.into(), depth);
     }
 
     pub fn execute_block(&mut self, stmts: &[Stmt], env: Rc<RefCell<Env>>) -> Result<(), LoxError> {
@@ -78,7 +59,30 @@ impl Interpreter {
         Ok(())
     }
 
-    fn assign_expr(&mut self, name: &str, expr: &Expr, line: u64) -> Result<Value, LoxError> {
+    fn evaluate(&mut self, expr: &Expr) -> Result<Value, LoxError> {
+        self.visit_expr(expr)
+    }
+
+    fn execute(&mut self, stmt: &Stmt) -> Result<(), LoxError> {
+        self.visit_stmt(stmt)
+    }
+
+    #[allow(unused)]
+    fn lookup_variable(&mut self, name: &str, line: u64) -> Result<Value, LoxError> {
+        let res = if let Some(n) = self.locals.get(name) {
+            self.env.borrow_mut().get_at(*n, name)
+        } else {
+            self.globals.borrow_mut().get(name)
+        };
+
+        res.map_err(|e| LoxError::Runtime(e.to_string(), line))
+    }
+}
+
+impl ExprVisitor for Interpreter {
+    type Output = Result<Value, LoxError>;
+
+    fn visit_assign_expr(&mut self, name: &str, expr: &Expr, line: u64) -> Result<Value, LoxError> {
         let val = self.evaluate(expr)?;
         self.env
             .borrow_mut()
@@ -88,7 +92,7 @@ impl Interpreter {
         Ok(val)
     }
 
-    fn binary_expr(
+    fn visit_binary_expr(
         &mut self,
         lhs: &Expr,
         op: BinOp,
@@ -114,7 +118,12 @@ impl Interpreter {
         res.map_err(|e| LoxError::Runtime(e.to_string(), line))
     }
 
-    fn call(&mut self, callee: &Expr, args: &[Expr], line: u64) -> Result<Value, LoxError> {
+    fn visit_call_expr(
+        &mut self,
+        callee: &Expr,
+        args: &[Expr],
+        line: u64,
+    ) -> Result<Value, LoxError> {
         if let Value::Call(fun) = self.evaluate(callee)? {
             let mut values = vec![];
             for arg in args {
@@ -137,7 +146,11 @@ impl Interpreter {
         }
     }
 
-    fn logical_expr(
+    fn visit_literal_expr(&mut self, literal: &Lit) -> Self::Output {
+        Ok(Value::from(literal))
+    }
+
+    fn visit_logical_expr(
         &mut self,
         lhs: &Expr,
         kw: Keyword,
@@ -153,7 +166,7 @@ impl Interpreter {
         }
     }
 
-    fn unary_expr(&mut self, op: UnOp, rhs: &Expr, line: u64) -> Result<Value, LoxError> {
+    fn visit_unary_expr(&mut self, op: UnOp, rhs: &Expr, line: u64) -> Result<Value, LoxError> {
         let val = self.evaluate(rhs)?;
 
         let res = match op {
@@ -163,24 +176,12 @@ impl Interpreter {
 
         res.map_err(|e| LoxError::Runtime(e.to_string(), line))
     }
-}
 
-impl ExprVisitor<Result<Value, LoxError>> for Interpreter {
-    fn visit_expr(&mut self, e: &Expr) -> Result<Value, LoxError> {
-        match e {
-            Expr::Assign(name, expr, line) => self.assign_expr(name, expr, *line),
-            Expr::Binary { lhs, op, rhs, line } => self.binary_expr(lhs, *op, rhs, *line),
-            Expr::Call { callee, args, line } => self.call(callee, args.as_slice(), *line),
-            Expr::Grouping(expr) => self.visit_expr(expr),
-            Expr::Literal(lit) => Ok(Value::from(lit)),
-            Expr::Logical { lhs, kw, rhs, line } => self.logical_expr(lhs, *kw, rhs, *line),
-            Expr::Unary(op, expr, line) => self.unary_expr(*op, expr, *line),
-            Expr::Variable(name, line) => self
-                .env
-                .borrow_mut()
-                .get(name)
-                .map_err(|e| LoxError::Runtime(e, *line)),
-        }
+    fn visit_variable_expr(&mut self, name: &str, line: u64) -> Self::Output {
+        self.env
+            .borrow_mut()
+            .get(name)
+            .map_err(|e| LoxError::Runtime(e, line))
     }
 }
 

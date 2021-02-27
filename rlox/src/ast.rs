@@ -1,7 +1,7 @@
 use std::fmt;
 
+use crate::printer::AstPrinter;
 use crate::token::TokenKind;
-use crate::visitor::AstPrinter;
 
 // Binary Operators
 #[derive(Copy, Clone, PartialEq, Debug)]
