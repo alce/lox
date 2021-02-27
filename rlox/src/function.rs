@@ -1,5 +1,6 @@
 use std::borrow::BorrowMut;
 use std::cell::RefCell;
+use std::fmt;
 use std::rc::Rc;
 
 use crate::ast::Stmt;
@@ -7,17 +8,21 @@ use crate::env::Env;
 use crate::value::{Callable, Value};
 use crate::{Interpreter, LoxError};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Func {
+    name: String,
     params: Vec<String>,
     body: Vec<Stmt>,
+    closure: Rc<RefCell<Env>>,
 }
 
 impl Func {
-    pub fn new(params: &[String], body: &[Stmt]) -> Self {
+    pub fn new(name: &str, params: &[String], body: &[Stmt], closure: Rc<RefCell<Env>>) -> Self {
         Func {
+            name: name.into(),
             params: params.to_vec(),
             body: body.to_vec(),
+            closure,
         }
     }
 }
@@ -28,7 +33,7 @@ impl Callable for Func {
     }
 
     fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, LoxError> {
-        let mut env = Env::with_environment(interpreter.globals());
+        let mut env = Env::with_environment(self.closure.clone());
 
         self.params
             .iter()
@@ -42,5 +47,11 @@ impl Callable for Func {
         } else {
             Ok(Value::Nil)
         }
+    }
+}
+
+impl fmt::Display for Func {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "<fn {}>", self.name)
     }
 }

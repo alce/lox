@@ -13,7 +13,7 @@ pub enum ScanError {
 impl fmt::Display for ScanError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ScanError::UnexpectedChar(c) => write!(f, "Unexpected character '{}'", c),
+            ScanError::UnexpectedChar(_) => write!(f, "Unexpected character."),
             ScanError::UnterminatedString => write!(f, "Unterminated string."),
         }
     }

@@ -1,3 +1,4 @@
+use std::fmt;
 use std::time::SystemTime;
 
 use crate::value::{Callable, Value};
@@ -18,5 +19,11 @@ impl Callable for Clock {
             .as_secs();
 
         Ok(Value::Num(t as f64))
+    }
+}
+
+impl fmt::Display for Clock {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("<native fn>")
     }
 }

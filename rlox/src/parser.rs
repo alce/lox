@@ -21,8 +21,6 @@ pub fn parse(source: &str) -> (Vec<Stmt>, Vec<LoxError>) {
 impl<'a> Parser<'a> {
     const MAX_FN_ARGUMENT_COUNT: usize = 255;
 
-    const TOO_MANY_ARGS_ERROR: &'static str = "Can't have more than 255 arguments.";
-
     pub fn new(tokens: Vec<Token<'a>>) -> Self {
         Parser { tokens, idx: 0 }
     }
@@ -53,10 +51,6 @@ impl<'a> Parser<'a> {
             FUN => {
                 self.advance();
                 self.function("function")
-            }
-            RETURN => {
-                self.advance();
-                self.return_statement()
             }
             _ => self.statement(),
         }
@@ -97,6 +91,10 @@ impl<'a> Parser<'a> {
             FOR => {
                 self.advance();
                 self.for_statement()
+            }
+            RETURN => {
+                self.advance();
+                self.return_statement()
             }
             _ => self.expression_statement(),
         }
@@ -211,40 +209,43 @@ impl<'a> Parser<'a> {
     }
 
     fn function(&mut self, kind: &str) -> Result<Stmt> {
-        match self.peek().kind {
-            IDENTIFIER(name) => {
-                self.advance();
-                self.consume(LEFT_PAREN, &format!("Expect '(' after {} name.", kind))?;
+        if let IDENTIFIER(name) = self.peek().kind {
+            self.advance();
+            self.consume(LEFT_PAREN, &format!("Expect '(' after {} name.", kind))?;
+            let mut params = vec![];
 
-                let mut params: Vec<String> = vec![];
+            if !self.check(RIGHT_PAREN) {
+                loop {
+                    if params.len() >= Self::MAX_FN_ARGUMENT_COUNT {
+                        return Err(
+                            self.parse_error(self.peek(), "Can't have more than 255 parameters.")
+                        );
+                    }
 
-                if !self.check(RIGHT_PAREN) {
-                    loop {
-                        if params.len() >= Self::MAX_FN_ARGUMENT_COUNT {
-                            return Err(self.parse_error(self.peek(), Self::TOO_MANY_ARGS_ERROR));
-                        }
+                    if let IDENTIFIER(name) = self.peek().kind {
+                        self.advance();
+                        params.push(name.into());
+                    } else {
+                        return Err(self.parse_error(self.peek(), "Expect parameter name."));
+                    }
 
-                        match self.advance().kind {
-                            IDENTIFIER(s) => params.push(s.into()),
-                            COMMA => break,
-                            _ => {
-                                return Err(self.parse_error(self.peek(), "Expect parameter name."))
-                            }
-                        }
+                    if !self._match(&[COMMA]) {
+                        break;
                     }
                 }
-
-                self.consume(RIGHT_PAREN, "Expect ')', after parameters")?;
-                self.consume(LEFT_BRACE, &format!("Expect '{{', before {} body", kind))?;
-
-                Ok(Stmt::Function {
-                    name: name.into(),
-                    params,
-                    body: self.block()?,
-                    line: self.peek().line,
-                })
             }
-            _ => Err(self.parse_error(self.peek(), &format!("Expect {} name", kind))),
+
+            self.consume(RIGHT_PAREN, "Expect ')' after parameters.")?;
+            self.consume(LEFT_BRACE, &format!("Expect '{{' before {} body.", kind))?;
+
+            Ok(Stmt::Function {
+                name: name.into(),
+                params,
+                body: self.block()?,
+                line: self.peek().line,
+            })
+        } else {
+            Err(self.parse_error(self.peek(), &format!("Expect {} name.", kind)))
         }
     }
 
@@ -362,13 +363,16 @@ impl<'a> Parser<'a> {
 
     fn finish_call(&mut self, callee: Expr) -> Result<Expr> {
         let mut args = vec![];
+
         if !self.check(RIGHT_PAREN) {
             loop {
                 if args.len() >= Self::MAX_FN_ARGUMENT_COUNT {
-                    return Err(self.parse_error(self.peek(), Self::TOO_MANY_ARGS_ERROR));
+                    return Err(
+                        self.parse_error(self.peek(), "Can't have more than 255 arguments.")
+                    );
                 }
-
                 args.push(self.expression()?);
+
                 if !self._match(&[COMMA]) {
                     break;
                 }

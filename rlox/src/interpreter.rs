@@ -205,7 +205,7 @@ impl StmtVisitor for Interpreter {
         body: &[Stmt],
         _line: u64,
     ) -> Self::Output {
-        let fun = Func::new(params, body);
+        let fun = Func::new(name, params, body, self.env.clone());
 
         self.env
             .borrow_mut()

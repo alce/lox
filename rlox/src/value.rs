@@ -5,7 +5,7 @@ use std::rc::Rc;
 use crate::ast::Lit;
 use crate::{Interpreter, LoxError};
 
-pub trait Callable: Debug {
+pub trait Callable: Debug + std::fmt::Display {
     fn arity(&self) -> usize;
     fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, LoxError>;
 }
@@ -104,7 +104,7 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Bool(b) => write!(f, "{}", b),
-            Value::Call(_) => f.write_str("function"),
+            Value::Call(callable) => write!(f, "{}", callable),
             Value::Nil => f.write_str("nil"),
             Value::Num(n) => {
                 if *n == 0.0 && n.is_sign_negative() {
