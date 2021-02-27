@@ -78,6 +78,7 @@ pub enum Stmt {
         line: u64,
     },
     Print(Expr),
+    Return(Option<Expr>, u64),
     Var(String, Option<Expr>),
     While(Expr, Box<Stmt>),
 }

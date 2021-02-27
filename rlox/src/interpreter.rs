@@ -5,7 +5,8 @@ use std::rc::Rc;
 use crate::ast::{BinOp, Expr, Keyword, Stmt, UnOp};
 use crate::clock::Clock;
 use crate::env::Env;
-use crate::value::{Func, Value};
+use crate::function::Func;
+use crate::value::Value;
 use crate::visitor::{ExprVisitor, StmtVisitor};
 use crate::LoxError;
 
@@ -53,6 +54,7 @@ impl Interpreter {
                 line,
             } => self.visit_function_stmt(name, params.as_slice(), body, *line),
             Stmt::Print(expr) => self.visit_print_stmt(expr),
+            Stmt::Return(expr, line) => self.visit_return_stmt(expr.as_ref(), *line),
             Stmt::Var(name, initializer) => self.visit_var_stmt(name, initializer.as_ref()),
             Stmt::If {
                 condition,
@@ -229,6 +231,15 @@ impl StmtVisitor for Interpreter {
 
     fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Output {
         self.evaluate(expr).map(|val| println!("{}", val))
+    }
+
+    fn visit_return_stmt(&mut self, expr: Option<&Expr>, _line: u64) -> Self::Output {
+        let val = match expr {
+            Some(exp) => self.evaluate(exp)?,
+            None => Value::Nil,
+        };
+
+        Err(LoxError::Return(val))
     }
 
     fn visit_var_stmt(&mut self, name: &str, initializer: Option<&Expr>) -> Self::Output {

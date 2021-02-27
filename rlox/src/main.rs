@@ -27,6 +27,7 @@ fn run_file(path: &str) {
                 eprintln!("[line {}]", line);
                 exit(70)
             }
+            _ => panic!("RET leaked"),
         }
     }
 }

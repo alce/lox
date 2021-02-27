@@ -1,11 +1,8 @@
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::fmt::{self, Debug, Write};
 use std::rc::Rc;
 
-use crate::ast::{Lit, Stmt};
-use crate::env::Env;
+use crate::ast::Lit;
 use crate::{Interpreter, LoxError};
 
 pub trait Callable: Debug {
@@ -20,40 +17,6 @@ pub enum Value {
     Call(Rc<dyn Callable>),
     Num(f64),
     Str(String),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Func {
-    params: Vec<String>,
-    body: Vec<Stmt>,
-}
-
-impl Func {
-    pub fn new(params: &[String], body: &[Stmt]) -> Self {
-        Func {
-            params: params.to_vec(),
-            body: body.to_vec(),
-        }
-    }
-}
-
-impl Callable for Func {
-    fn arity(&self) -> usize {
-        self.params.len()
-    }
-
-    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, LoxError> {
-        let mut env = Env::with_environment(interpreter.globals());
-
-        self.params
-            .iter()
-            .zip(args.iter())
-            .for_each(|(name, value)| env.borrow_mut().define(name, value.clone()));
-
-        interpreter.execute_block(&self.body, Rc::new(RefCell::new(env)))?;
-
-        Ok(Value::Nil)
-    }
 }
 
 const NUMBERS_OR_STRINGS: &str = "Operands must be two numbers or two strings.";

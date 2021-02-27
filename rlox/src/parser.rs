@@ -54,6 +54,10 @@ impl<'a> Parser<'a> {
                 self.advance();
                 self.function("function")
             }
+            RETURN => {
+                self.advance();
+                self.return_statement()
+            }
             _ => self.statement(),
         }
     }
@@ -165,6 +169,17 @@ impl<'a> Parser<'a> {
         let val = self.expression()?;
         self.consume(SEMICOLON, "Expect ';' after value.")?;
         Ok(Stmt::Print(val))
+    }
+
+    fn return_statement(&mut self) -> Result<Stmt> {
+        let value = if !self.check(SEMICOLON) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+
+        self.consume(SEMICOLON, "Expect ';' after return value.")?;
+        Ok(Stmt::Return(value, self.peek().line))
     }
 
     fn var_declaration(&mut self) -> Result<Stmt> {
