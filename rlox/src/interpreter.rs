@@ -158,7 +158,7 @@ impl Interpreter {
 
         let res = match op {
             UnOp::Neg => val.neg(),
-            UnOp::Not => val.not(),
+            UnOp::Not => Ok(Value::from(!val.is_truthy())),
         };
 
         res.map_err(|e| LoxError::Runtime(e.to_string(), line))

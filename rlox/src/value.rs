@@ -60,13 +60,6 @@ impl Value {
         }
     }
 
-    pub fn not(self) -> Result<Value, &'static str> {
-        match self {
-            Value::Bool(b) => Ok(Value::Bool(!b)),
-            _ => Ok(Value::Bool(true)),
-        }
-    }
-
     pub fn lt(&self, other: &Self) -> Result<Value, &'static str> {
         Ok(matches!(self.cmp(other)?, Some(Ordering::Less)).into())
     }
