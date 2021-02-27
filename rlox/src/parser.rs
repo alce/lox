@@ -19,6 +19,10 @@ pub fn parse(source: &str) -> (Vec<Stmt>, Vec<LoxError>) {
 }
 
 impl<'a> Parser<'a> {
+    const MAX_FN_ARGUMENT_COUNT: usize = 255;
+
+    const TOO_MANY_ARGS_ERROR: &'static str = "Can't have more than 255 arguments.";
+
     pub fn new(tokens: Vec<Token<'a>>) -> Self {
         Parser { tokens, idx: 0 }
     }
@@ -41,10 +45,16 @@ impl<'a> Parser<'a> {
     }
 
     fn declaration(&mut self) -> Result<Stmt> {
-        if self._match(&[VAR]) {
-            self.var_declaration()
-        } else {
-            self.statement()
+        match self.peek().kind {
+            VAR => {
+                self.advance();
+                self.var_declaration()
+            }
+            FUN => {
+                self.advance();
+                self.function("function")
+            }
+            _ => self.statement(),
         }
     }
 
@@ -54,13 +64,11 @@ impl<'a> Parser<'a> {
 
     fn block(&mut self) -> Result<Vec<Stmt>> {
         let mut stmts = vec![];
-
         while !self.check(RIGHT_BRACE) && !self.at_end() {
             stmts.push(self.declaration()?)
         }
 
         self.consume(RIGHT_BRACE, "Expect '}' after block.")?;
-
         Ok(stmts)
     }
 
@@ -187,6 +195,44 @@ impl<'a> Parser<'a> {
         Ok(Stmt::Expr(expr))
     }
 
+    fn function(&mut self, kind: &str) -> Result<Stmt> {
+        match self.peek().kind {
+            IDENTIFIER(name) => {
+                self.advance();
+                self.consume(LEFT_PAREN, &format!("Expect '(' after {} name.", kind))?;
+
+                let mut params: Vec<String> = vec![];
+
+                if !self.check(RIGHT_PAREN) {
+                    loop {
+                        if params.len() >= Self::MAX_FN_ARGUMENT_COUNT {
+                            return Err(self.parse_error(self.peek(), Self::TOO_MANY_ARGS_ERROR));
+                        }
+
+                        match self.advance().kind {
+                            IDENTIFIER(s) => params.push(s.into()),
+                            COMMA => break,
+                            _ => {
+                                return Err(self.parse_error(self.peek(), "Expect parameter name."))
+                            }
+                        }
+                    }
+                }
+
+                self.consume(RIGHT_PAREN, "Expect ')', after parameters")?;
+                self.consume(LEFT_BRACE, &format!("Expect '{{', before {} body", kind))?;
+
+                Ok(Stmt::Function {
+                    name: name.into(),
+                    params,
+                    body: self.block()?,
+                    line: self.peek().line,
+                })
+            }
+            _ => Err(self.parse_error(self.peek(), &format!("Expect {} name", kind))),
+        }
+    }
+
     fn assignment(&mut self) -> Result<Expr> {
         let expr = self.or()?;
 
@@ -282,7 +328,40 @@ impl<'a> Parser<'a> {
             return Ok(Expr::unary(op.kind.into(), right, op.line));
         }
 
-        self.primary()
+        self.call()
+    }
+
+    fn call(&mut self) -> Result<Expr> {
+        let mut expr = self.primary()?;
+
+        loop {
+            if self._match(&[LEFT_PAREN]) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr> {
+        let mut args = vec![];
+        if !self.check(RIGHT_PAREN) {
+            loop {
+                if args.len() >= Self::MAX_FN_ARGUMENT_COUNT {
+                    return Err(self.parse_error(self.peek(), Self::TOO_MANY_ARGS_ERROR));
+                }
+
+                args.push(self.expression()?);
+                if !self._match(&[COMMA]) {
+                    break;
+                }
+            }
+        }
+
+        let paren = self.consume(RIGHT_PAREN, "Expect ')' after arguments.")?;
+        Ok(Expr::call(callee, args, paren.line))
     }
 
     fn primary(&mut self) -> Result<Expr> {
@@ -304,7 +383,6 @@ impl<'a> Parser<'a> {
 
     fn synchronize(&mut self) {
         self.advance();
-
         while !self.at_end() {
             if self.previous().kind == SEMICOLON {
                 return;

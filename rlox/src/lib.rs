@@ -1,4 +1,6 @@
 mod ast;
+mod clock;
+mod env;
 mod error;
 mod interpreter;
 mod parser;

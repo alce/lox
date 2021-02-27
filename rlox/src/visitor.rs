@@ -10,20 +10,22 @@ pub trait StmtVisitor {
     type Output;
 
     fn visit_block_stmt(&mut self, stmts: &[Stmt]) -> Self::Output;
-
     fn visit_expression_stmt(&mut self, expr: &Expr) -> Self::Output;
-
+    fn visit_function_stmt(
+        &mut self,
+        name: &str,
+        params: &[String],
+        body: &[Stmt],
+        line: u64,
+    ) -> Self::Output;
     fn visit_if_stmt(
         &mut self,
         condition: &Expr,
         then: &Stmt,
         r#else: Option<&Stmt>,
     ) -> Self::Output;
-
     fn visit_print_stmt(&mut self, expr: &Expr) -> Self::Output;
-
     fn visit_var_stmt(&mut self, name: &str, initializer: Option<&Expr>) -> Self::Output;
-
     fn visit_while_stmt(&mut self, condition: &Expr, body: &Stmt) -> Self::Output;
 }
 
@@ -49,6 +51,7 @@ impl ExprVisitor<String> for AstPrinter {
     fn visit_expr(&mut self, e: &Expr) -> String {
         match e {
             Expr::Binary { rhs, lhs, op, .. } => self.parenthesize(op, &[lhs, rhs]),
+            Expr::Call { .. } => todo!(),
             Expr::Grouping(exp) => self.parenthesize(&"group", &[exp]),
             Expr::Unary(op, expr, ..) => self.parenthesize(op, &[expr]),
             Expr::Literal(lit) => format!("{}", lit),

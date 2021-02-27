@@ -1,14 +1,59 @@
+use std::borrow::BorrowMut;
+use std::cell::RefCell;
 use std::cmp::Ordering;
-use std::fmt::{self, Write};
+use std::fmt::{self, Debug, Write};
+use std::rc::Rc;
 
-use crate::ast::Lit;
+use crate::ast::{Lit, Stmt};
+use crate::env::Env;
+use crate::{Interpreter, LoxError};
 
-#[derive(Debug, PartialEq, Clone)]
+pub trait Callable: Debug {
+    fn arity(&self) -> usize;
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, LoxError>;
+}
+
+#[derive(Debug, Clone)]
 pub enum Value {
-    Str(String),
-    Num(f64),
     Bool(bool),
     Nil,
+    Call(Rc<dyn Callable>),
+    Num(f64),
+    Str(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Func {
+    params: Vec<String>,
+    body: Vec<Stmt>,
+}
+
+impl Func {
+    pub fn new(params: &[String], body: &[Stmt]) -> Self {
+        Func {
+            params: params.to_vec(),
+            body: body.to_vec(),
+        }
+    }
+}
+
+impl Callable for Func {
+    fn arity(&self) -> usize {
+        self.params.len()
+    }
+
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<Value>) -> Result<Value, LoxError> {
+        let mut env = Env::with_environment(interpreter.globals());
+
+        self.params
+            .iter()
+            .zip(args.iter())
+            .for_each(|(name, value)| env.borrow_mut().define(name, value.clone()));
+
+        interpreter.execute_block(&self.body, Rc::new(RefCell::new(env)))?;
+
+        Ok(Value::Nil)
+    }
 }
 
 const NUMBERS_OR_STRINGS: &str = "Operands must be two numbers or two strings.";
@@ -102,15 +147,28 @@ impl Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Value::Str(s) => f.write_str(s),
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::Call(_) => f.write_str("function"),
+            Value::Nil => f.write_str("nil"),
             Value::Num(n) => {
                 if *n == 0.0 && n.is_sign_negative() {
                     f.write_char('-')?;
                 }
                 write!(f, "{}", n)
             }
-            Value::Bool(b) => write!(f, "{}", b),
-            Value::Nil => write!(f, "nil"),
+            Value::Str(s) => f.write_str(s),
+        }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::Bool(a), Value::Bool(b)) => a.eq(b),
+            (Value::Nil, Value::Nil) => true,
+            (Value::Num(a), Value::Num(b)) => a.eq(b),
+            (Value::Str(a), Value::Str(b)) => a.eq(b),
+            _ => false,
         }
     }
 }

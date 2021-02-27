@@ -3,7 +3,6 @@ use std::fmt;
 use crate::token::TokenKind;
 use crate::visitor::AstPrinter;
 
-// TODO: maybe split into logical, eq, arith?
 // Binary Operators
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum BinOp {
@@ -20,13 +19,18 @@ pub enum BinOp {
 }
 
 // Expressions
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Assign(String, Box<Expr>, u64),
     Binary {
         lhs: Box<Expr>,
         op: BinOp,
         rhs: Box<Expr>,
+        line: u64,
+    },
+    Call {
+        callee: Box<Expr>,
+        args: Vec<Expr>,
         line: u64,
     },
     Grouping(Box<Expr>),
@@ -57,7 +61,7 @@ pub enum Lit {
 }
 
 // Statements
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     Expr(Expr),
     Block(Vec<Stmt>),
@@ -65,6 +69,13 @@ pub enum Stmt {
         condition: Expr,
         then: Box<Stmt>,
         r#else: Option<Box<Stmt>>,
+    },
+    Function {
+        name: String,
+        // parameter names
+        params: Vec<String>,
+        body: Vec<Stmt>,
+        line: u64,
     },
     Print(Expr),
     Var(String, Option<Expr>),
@@ -88,6 +99,14 @@ impl Expr {
             lhs: Box::new(lhs),
             op,
             rhs: Box::new(rhs),
+            line,
+        }
+    }
+
+    pub fn call(callee: Expr, args: Vec<Expr>, line: u64) -> Expr {
+        Expr::Call {
+            callee: Box::new(callee),
+            args,
             line,
         }
     }

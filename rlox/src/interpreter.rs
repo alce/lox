@@ -1,69 +1,33 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
 
 use crate::ast::{BinOp, Expr, Keyword, Stmt, UnOp};
-use crate::value::Value;
+use crate::clock::Clock;
+use crate::env::Env;
+use crate::value::{Func, Value};
 use crate::visitor::{ExprVisitor, StmtVisitor};
 use crate::LoxError;
 
 pub struct Interpreter {
     env: Rc<RefCell<Env>>,
-}
-
-#[derive(Debug)]
-struct Env {
-    enclosing: Option<Rc<RefCell<Env>>>,
-    values: HashMap<String, Value>,
-}
-
-impl Env {
-    fn new() -> Self {
-        Env {
-            values: HashMap::new(),
-            enclosing: None,
-        }
-    }
-
-    fn with_environment(env: Rc<RefCell<Env>>) -> Self {
-        Env {
-            values: HashMap::new(),
-            enclosing: Some(env),
-        }
-    }
-
-    fn define(&mut self, name: &str, value: Value) {
-        self.values.insert(name.into(), value);
-    }
-
-    fn get(&mut self, name: &str) -> Result<Value, String> {
-        if self.values.contains_key(name) {
-            Ok(self.values.get(name).cloned().unwrap())
-        } else if let Some(enc) = &mut self.enclosing {
-            enc.borrow_mut().get(name)
-        } else {
-            Err(format!("Undefined variable '{}'.", name))
-        }
-    }
-
-    fn assign(&mut self, name: &str, value: Value) -> Result<(), String> {
-        if let Some(v) = self.values.get_mut(name) {
-            *v = value;
-            Ok(())
-        } else if let Some(enc) = &mut self.enclosing {
-            enc.borrow_mut().assign(name, value)
-        } else {
-            Err(format!("Undefined variable '{}'.", name))
-        }
-    }
+    globals: Rc<RefCell<Env>>,
 }
 
 impl Interpreter {
     pub fn new() -> Interpreter {
+        let mut env = Env::new();
+        env.define("clock", Value::Call(Rc::new(Clock)));
+        let globals = Rc::new(RefCell::new(env));
+
         Interpreter {
-            env: Rc::new(RefCell::new(Env::new())),
+            env: globals.clone(),
+            globals,
         }
+    }
+
+    pub fn globals(&self) -> Rc<RefCell<Env>> {
+        self.globals.clone()
     }
 
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), LoxError> {
@@ -80,8 +44,14 @@ impl Interpreter {
 
     fn execute(&mut self, stmt: &Stmt) -> Result<(), LoxError> {
         match stmt {
-            Stmt::Expr(expr) => self.visit_expression_stmt(expr),
             Stmt::Block(stmts) => self.visit_block_stmt(&stmts),
+            Stmt::Expr(expr) => self.visit_expression_stmt(expr),
+            Stmt::Function {
+                name,
+                params,
+                body,
+                line,
+            } => self.visit_function_stmt(name, params.as_slice(), body, *line),
             Stmt::Print(expr) => self.visit_print_stmt(expr),
             Stmt::Var(name, initializer) => self.visit_var_stmt(name, initializer.as_ref()),
             Stmt::If {
@@ -93,9 +63,8 @@ impl Interpreter {
         }
     }
 
-    fn execute_block(&mut self, stmts: &[Stmt], env: Rc<RefCell<Env>>) -> Result<(), LoxError> {
+    pub fn execute_block(&mut self, stmts: &[Stmt], env: Rc<RefCell<Env>>) -> Result<(), LoxError> {
         let prev = mem::replace(&mut self.env, env);
-
         for stmt in stmts {
             if let Err(e) = self.execute(stmt) {
                 self.env = prev;
@@ -109,7 +78,6 @@ impl Interpreter {
 
     fn assign_expr(&mut self, name: &str, expr: &Expr, line: u64) -> Result<Value, LoxError> {
         let val = self.evaluate(expr)?;
-
         self.env
             .borrow_mut()
             .assign(name, val.clone())
@@ -142,6 +110,29 @@ impl Interpreter {
         };
 
         res.map_err(|e| LoxError::Runtime(e.to_string(), line))
+    }
+
+    fn call(&mut self, callee: &Expr, args: &[Expr], line: u64) -> Result<Value, LoxError> {
+        if let Value::Call(fun) = self.evaluate(callee)? {
+            let mut values = vec![];
+            for arg in args {
+                values.push(self.evaluate(arg)?)
+            }
+
+            if values.len() != fun.arity() {
+                let msg = format!(
+                    "Expected {} arguments but got {}.",
+                    fun.arity(),
+                    values.len()
+                );
+                return Err(LoxError::Runtime(msg, line));
+            }
+
+            fun.call(self, values)
+        } else {
+            let msg = "Can only call functions and classes.";
+            Err(LoxError::Runtime(msg.into(), line))
+        }
     }
 
     fn logical_expr(
@@ -177,6 +168,7 @@ impl ExprVisitor<Result<Value, LoxError>> for Interpreter {
         match e {
             Expr::Assign(name, expr, line) => self.assign_expr(name, expr, *line),
             Expr::Binary { lhs, op, rhs, line } => self.binary_expr(lhs, *op, rhs, *line),
+            Expr::Call { callee, args, line } => self.call(callee, args.as_slice(), *line),
             Expr::Grouping(expr) => self.visit_expr(expr),
             Expr::Literal(lit) => Ok(Value::from(lit)),
             Expr::Logical { lhs, kw, rhs, line } => self.logical_expr(lhs, *kw, rhs, *line),
@@ -202,6 +194,22 @@ impl StmtVisitor for Interpreter {
 
     fn visit_expression_stmt(&mut self, expr: &Expr) -> Self::Output {
         self.evaluate(expr).map(|_| ())
+    }
+
+    fn visit_function_stmt(
+        &mut self,
+        name: &str,
+        params: &[String],
+        body: &[Stmt],
+        _line: u64,
+    ) -> Self::Output {
+        let fun = Func::new(params, body);
+
+        self.env
+            .borrow_mut()
+            .define(name, Value::Call(Rc::new(fun)));
+
+        Ok(())
     }
 
     fn visit_if_stmt(
@@ -241,5 +249,11 @@ impl StmtVisitor for Interpreter {
         }
 
         Ok(())
+    }
+}
+
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
     }
 }
