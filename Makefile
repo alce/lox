@@ -12,7 +12,9 @@ TEST_RUNNER := bin/test_runner
 
 CFLAGS := -std=c99 -O3 -flto -Wall -Wextra -Werror -Wno-unused-parameter
 
-all: test_dart test_c test_rust
+default: test_swift
+
+all: test_dart test_c test_rust test_swift
 
 clean:
 	@rm -rf bin
