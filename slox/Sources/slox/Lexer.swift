@@ -23,6 +23,7 @@ class Lexer {
             case "+" : addToken(.PLUS)
             case ";" : addToken(.SEMICOLON)
             case "*" : addToken(.STAR)
+            case "!": addToken(match("=") ? .BANG_EQUAL : .BANG)
             default: Lox.error(line: line, message: "Unexpected character.")
             }
         }
@@ -33,5 +34,10 @@ class Lexer {
     
     private func addToken(_ type: TokenType) {
         tokens.append(Token(type: type, line: line))
+    }
+    
+    private func match(_ expected: Character) -> Bool {
+        
+        
     }
 }
